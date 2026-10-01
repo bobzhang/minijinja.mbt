@@ -34,3 +34,54 @@ test "str debug" {
   inspect(@rfmt.str_debug("a\"b\\c\n\t'"), content="\"a\\\"b\\\\c\\n\\t'\"")
   inspect(@rfmt.str_debug("\u{1}é"), content="\"\\u{1}é\"")
 }
+
+///|
+test "pretty debug builders" {
+  fn render(alternate : Bool) -> String {
+    let f = @rfmt.Formatter::new(alternate~)
+    f
+    .debug_struct("Error")
+    .field("kind", f => f.write_str("SyntaxError"))
+    .field("list", f => {
+      f
+      .debug_list()
+      .entry(f => f.write_str("1"))
+      .entry(f => {
+        f
+        .debug_map()
+        .entry(f => f.write_str("a"), f => f.write_str("b"))
+        .finish()
+      })
+      .finish()
+    })
+    .field("empty", f => f.debug_list().finish())
+    .field("tuple", f => {
+      f.debug_tuple("Some").field(f => f.write_str("1")).finish()
+    })
+    .finish()
+    f.to_string()
+  }
+
+  inspect(
+    render(false),
+    content="Error { kind: SyntaxError, list: [1, {a: b}], empty: [], tuple: Some(1) }",
+  )
+  inspect(
+    render(true),
+    content=(
+      #|Error {
+      #|    kind: SyntaxError,
+      #|    list: [
+      #|        1,
+      #|        {
+      #|            a: b,
+      #|        },
+      #|    ],
+      #|    empty: [],
+      #|    tuple: Some(
+      #|        1,
+      #|    ),
+      #|}
+    ),
+  )
+}
