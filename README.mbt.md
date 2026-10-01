@@ -95,6 +95,71 @@ test "custom filter" {
 }
 ```
 
+Arguments can also be converted with the generic `Args::next`, which works
+for every type implementing `FromValue` (`Bool`, `Int`, `Int64`, `Double`,
+`String`, `Value`, `Array[T]` and `T?`):
+
+```mbt check
+///|
+test "typed arguments" {
+  let env = @minijinja.Environment::new()
+  env.add_function("clamp", (state, args) => {
+    let a = @minijinja.Args::new(state, args)
+    let value : Int = a.next()
+    let lo : Int = a.next()
+    let hi : Int? = a.next()
+    a.finish()
+    let hi = hi.unwrap_or(100)
+    @minijinja.Value::from_int(
+      if value < lo {
+        lo
+      } else if value > hi {
+        hi
+      } else {
+        value
+      },
+    )
+  })
+  inspect(
+    env.render_str(
+      "{{ clamp(5, 10) }} {{ clamp(500, 1) }}",
+      @minijinja.Value::none(),
+    ),
+    content="10 100",
+  )
+}
+```
+
+## Loaders, captured state and streaming
+
+Templates can be loaded on demand with a loader callback.  Rendering can
+stream into a callback, and the final state can be used to render individual
+blocks or call macros:
+
+```mbt check
+///|
+test "loader and blocks" {
+  let env = @minijinja.Environment::new()
+  let sources = {
+    "macros.txt": "{% macro hello(name) %}Hello {{ name }}!{% endmacro %}",
+    "page.txt": "{% from 'macros.txt' import hello %}{% block title %}{{ hello(who) }}{% endblock %}",
+  }
+  env.set_loader(name => sources.get(name))
+  let tmpl = env.get_template("page.txt")
+  let ctx = @minijinja.Value::from_pairs([
+    ("who", @minijinja.Value::from_string("World")),
+  ])
+  let out = StringBuilder()
+  let state = tmpl.render_to(ctx, s => out.write_view(s))
+  inspect(out.to_string(), content="Hello World!")
+  inspect(state.render_block("title"), content="Hello World!")
+  inspect(
+    state.call_macro("hello", [@minijinja.Value::from_string("Moon")]),
+    content="Hello Moon!",
+  )
+}
+```
+
 ## Dynamic objects
 
 Implement the [`Object`] trait to expose your own types to templates:
