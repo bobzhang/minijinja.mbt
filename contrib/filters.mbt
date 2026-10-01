@@ -14,18 +14,10 @@ let html_entities : FixedArray[(String, String)] = [
 /// Port of `i64::try_from(Value)`: accepts integers, bools and floats with
 /// an integral value.
 fn value_to_i64(v : @minijinja.Value) -> Int64? {
-  match v.kind() {
-    Bool => Some(if v.is_true() { 1L } else { 0L })
-    Number =>
-      if v.is_integer() {
-        v.as_i64()
-      } else {
-        match v.as_f64() {
-          Some(f) if f.to_int64().to_double() == f => Some(f.to_int64())
-          _ => None
-        }
-      }
+  try v.convert() catch {
     _ => None
+  } noraise {
+    i => Some(i)
   }
 }
 

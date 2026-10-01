@@ -30,7 +30,7 @@ fn XorShiftRng::for_state(state : @minijinja.State) -> XorShiftRng {
       { seed: bits.reinterpret_as_uint64(), }
     _ => {
       let seed = match state.lookup("RAND_SEED") {
-        Some(v) => value_to_u64(v)
+        Some(v) => v.as_uint64()
         None => None
       }
       let rng = XorShiftRng::new(seed)
@@ -85,52 +85,6 @@ fn XorShiftRng::random_range(
   upper : Int64,
 ) -> Int64 {
   (self.random() * (upper - lower).to_double()).to_int64() + lower
-}
-
-///|
-/// Port of `u64::try_from(Value)`: accepts non-negative integers, bools and
-/// floats with an integral value.
-fn value_to_u64(v : @minijinja.Value) -> UInt64? {
-  match v.kind() {
-    Bool => Some(if v.is_true() { 1UL } else { 0UL })
-    Number =>
-      if v.is_integer() {
-        match v.as_i64() {
-          Some(i) =>
-            if i >= 0L {
-              Some(i.reinterpret_as_uint64())
-            } else {
-              None
-            }
-          // too large for an Int64: parse the decimal representation
-          None => parse_u64(v.to_string())
-        }
-      } else {
-        match v.as_f64() {
-          Some(f) if f.to_int64().to_double() == f && f >= 0.0 =>
-            Some(f.to_int64().reinterpret_as_uint64())
-          _ => None
-        }
-      }
-    _ => None
-  }
-}
-
-///|
-fn parse_u64(s : String) -> UInt64? {
-  if s.is_empty() {
-    return None
-  }
-  let mut rv = 0UL
-  for c in s {
-    guard c is ('0'..='9') else { return None }
-    let digit = (c.to_int() - '0'.to_int()).to_uint64()
-    if rv > (@uint64.MAX_VALUE - digit) / 10UL {
-      return None
-    }
-    rv = rv * 10UL + digit
-  }
-  Some(rv)
 }
 
 ///|
