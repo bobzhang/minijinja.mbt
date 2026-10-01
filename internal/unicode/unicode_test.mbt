@@ -17,3 +17,10 @@ test "case mapping" {
   inspect(@unicode.is_uppercase('Ä'), content="true")
   inspect(@unicode.is_lowercase('ß'), content="true")
 }
+
+///|
+test "final sigma" {
+  inspect(@unicode.to_lower("ǅΣ"), content="ǆς")
+  inspect(@unicode.to_lower("A\u{200D}Σ"), content="a\u{200D}ς")
+  inspect(@unicode.to_lower("ΣA"), content="σa")
+}

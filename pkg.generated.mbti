@@ -111,6 +111,7 @@ pub fn Environment::add_global(Self, String, Value) -> Unit
 pub fn Environment::add_template(Self, String, String) -> Unit raise TemplateError
 pub fn Environment::add_test(Self, String, (State, Array[Value]) -> Value raise TemplateError) -> Unit
 pub fn Environment::clear_templates(Self) -> Unit
+pub fn Environment::clone(Self) -> Self
 pub fn Environment::compile_expression(Self, String) -> Expression raise TemplateError
 pub fn Environment::debug(Self) -> Bool
 pub fn Environment::empty() -> Self
@@ -386,4 +387,5 @@ pub(open) trait Object {
   fn call(Self, State, Array[Value]) -> Value raise TemplateError = _
   fn call_method(Self, State, String, Array[Value]) -> Value raise TemplateError = _
   fn render(Self) -> String? = _
+  fn custom_cmp(Self, Value) -> Int? = _
 }

@@ -1456,52 +1456,6 @@ fn filter_map(state : State, args : Array[Value]) -> Value raise TemplateError {
 }
 
 ///|
-/// The `(grouper, list)` tuples produced by `groupby`.
-priv struct GroupTuple {
-  grouper : Value
-  list : Array[Value]
-}
-
-///|
-impl Object for GroupTuple with fn repr(_self) {
-  Seq
-}
-
-///|
-impl Object for GroupTuple with fn get_value(self, key) {
-  match (key.as_usize(), key.as_str()) {
-    (Some(0), None) | (None, Some("grouper")) => Some(self.grouper)
-    (Some(1), None) | (None, Some("list")) => {
-      let list = self.list
-      Some(Value::make_iterable(() => list.iter()))
-    }
-    _ => None
-  }
-}
-
-///|
-impl Object for GroupTuple with fn enumerate(_self) {
-  Seq(2)
-}
-
-///|
-impl Object for GroupTuple with fn render(self) {
-  let f = @rfmt.Formatter::new()
-  f
-  .debug_tuple("")
-  .field(f => self.grouper.fmt_debug(f))
-  .field(f => {
-    let l = f.debug_list()
-    for v in self.list {
-      l.entry(f => v.fmt_debug(f)) |> ignore
-    }
-    l.finish()
-  })
-  .finish()
-  Some(f.to_string())
-}
-
-///|
 fn filter_groupby(
   state : State,
   args : Array[Value],
@@ -1531,19 +1485,14 @@ fn filter_groupby(
     let group_by = item.get_path_or_default(attr, default)
     if grouper is Some(last_grouper) &&
       cmp_helper(last_grouper, group_by, case_sensitive, false) != 0 {
-      rv.push(Value::from_object(GroupTuple::{ grouper: last_grouper, list, }))
+      rv.push(make_group(last_grouper, list))
       list = []
     }
     grouper = Some(group_by)
     list.push(item)
   }
   if !list.is_empty() {
-    rv.push(
-      Value::from_object(GroupTuple::{
-        grouper: grouper.unwrap_or(Value::undefined()),
-        list,
-      }),
-    )
+    rv.push(make_group(grouper.unwrap_or(Value::undefined()), list))
   }
   Value::from_array(rv)
 }
@@ -1771,4 +1720,9 @@ fn register_builtin_filters(rv : Map[String, Value]) -> Unit {
   add(rv, "format", b + "format", filter_format)
   add(rv, "tojson", b + "tojson", filter_tojson)
   add(rv, "urlencode", b + "urlencode", filter_urlencode)
+}
+
+///|
+fn make_group(grouper : Value, list : Array[Value]) -> Value {
+  Object(DynObject::new(Group(grouper, list)))
 }

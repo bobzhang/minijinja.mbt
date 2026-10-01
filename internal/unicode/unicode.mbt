@@ -140,20 +140,15 @@ pub fn to_upper(s : StringView) -> String {
 }
 
 ///|
-fn is_case_ignorable(c : Char) -> Bool {
-  // a pragmatic approximation of the Case_Ignorable property
-  match c {
-    '\'' | '.' | ':' | '^' | '`' | '\u{ad}' | '\u{b7}' | '\u{2019}' => true
-    _ => {
-      let cp = c.to_int()
-      (cp >= 0x300 && cp <= 0x36f) || (cp >= 0x2b0 && cp <= 0x2ff)
-    }
-  }
+/// The Unicode `Case_Ignorable` property.
+pub fn is_case_ignorable(c : Char) -> Bool {
+  in_ranges(case_ignorable_table, c.to_int())
 }
 
 ///|
-fn is_cased(c : Char) -> Bool {
-  is_uppercase(c) || is_lowercase(c)
+/// The Unicode `Cased` property.
+pub fn is_cased(c : Char) -> Bool {
+  in_ranges(cased_table, c.to_int())
 }
 
 ///|

@@ -50,6 +50,23 @@ def lowercase(cp):
     return chr(cp).islower()
 
 
+def cased(cp):
+    c = chr(cp)
+    return c.isupper() or c.islower() or unicodedata.category(c) == "Lt"
+
+
+# Word_Break=MidLetter/MidNumLet/Single_Quote characters (part of Case_Ignorable)
+WORD_BREAK_MID = set(
+    "\u0027\u002e\u003a\u00b7\u0387\u055f\u05f4\u2018\u2019\u2024\u2027"
+    "\ufe13\ufe52\ufe55\uff07\uff0e\uff1a"
+)
+
+
+def case_ignorable(cp):
+    c = chr(cp)
+    return unicodedata.category(c) in ("Mn", "Me", "Cf", "Lm", "Sk") or c in WORD_BREAK_MID
+
+
 def emit_ranges(out, name, rs):
     out.append("///|")
     out.append(f"let {name} : FixedArray[Int] = [")
@@ -104,6 +121,8 @@ def main():
     emit_ranges(out, "xid_continue_table", ranges(xid_continue))
     emit_ranges(out, "uppercase_table", ranges(uppercase))
     emit_ranges(out, "lowercase_table", ranges(lowercase))
+    emit_ranges(out, "cased_table", ranges(cased))
+    emit_ranges(out, "case_ignorable_table", ranges(case_ignorable))
     emit_mapping(out, "upper", lambda c: c.upper())
     # Python lowercases U+0130 to "i̇" like Rust; final sigma is handled
     # by the caller.

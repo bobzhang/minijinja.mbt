@@ -63,6 +63,9 @@ fn Enumerator::query_len(self : Enumerator) -> Int? {
 ///   iterables and to [`Enumerator::NonEnumerable`] for plain objects.
 /// * `call` and `call_method` fail by default.
 /// * `render` returns `None` to request the default rendering.
+/// * `custom_cmp` returns `None` to use the default comparison.  When it is
+///   implemented it is consulted for equality and ordering against any other
+///   object (it should return `None` for objects it does not understand).
 pub(open) trait Object {
   fn repr(Self) -> ObjectRepr = _
   fn get_value(Self, Value) -> Value? = _
@@ -73,6 +76,12 @@ pub(open) trait Object {
   fn call(Self, State, Array[Value]) -> Value raise TemplateError = _
   fn call_method(Self, State, String, Array[Value]) -> Value raise TemplateError = _
   fn render(Self) -> String? = _
+  fn custom_cmp(Self, Value) -> Int? = _
+}
+
+///|
+impl Object with fn custom_cmp(_self, _other) {
+  None
 }
 
 ///|
@@ -144,6 +153,8 @@ priv enum ObjectImpl {
   MergeSeq(MergeSeqObject)
   Loop(LoopObject)
   ClosureRef(Closure)
+  /// The `(grouper, list)` tuples produced by `groupby`
+  Group(Value, Array[Value])
   Custom(&Object)
 }
 
@@ -178,6 +189,7 @@ pub fn DynObject::repr(self : DynObject) -> ObjectRepr {
     Map(_) | Kwargs(_) | Namespace(_) | Loop(_) => Map
     MergeSeq(m) => m.repr
     ClosureRef(_) => Plain
+    Group(_, _) => Seq
     Custom(o) => o.repr()
   }
 }
@@ -199,6 +211,13 @@ pub fn DynObject::get_value(self : DynObject, key : Value) -> Value? {
       }
     MergeSeq(m) => merge_seq_get_value(m, key)
     ClosureRef(_) => None
+    Group(grouper, list) =>
+      match (key.as_usize(), key.as_str()) {
+        (Some(0), None) | (None, Some("grouper")) => Some(grouper)
+        (Some(1), None) | (None, Some("list")) =>
+          Some(Value::make_iterable(() => list.iter()))
+        _ => None
+      }
     Loop(l) =>
       match key.as_str() {
         Some(s) => l.get_value_by_str(s)
@@ -212,7 +231,8 @@ pub fn DynObject::get_value(self : DynObject, key : Value) -> Value? {
 /// Looks up an attribute by a string key.
 pub fn DynObject::get_value_by_str(self : DynObject, key : String) -> Value? {
   match self.inner {
-    Seq(_) | Tuple(_) | MergeSeq(_) => self.get_value(Value::from_string(key))
+    Seq(_) | Tuple(_) | MergeSeq(_) | Group(_, _) =>
+      self.get_value(Value::from_string(key))
     Map(m) | Kwargs(m) => m.get(Value::from_string(key))
     Namespace(m) => m.get(key)
     Loop(l) => l.get_value_by_str(key)
@@ -239,6 +259,7 @@ pub fn DynObject::enumerate(self : DynObject) -> Enumerator {
     MergeSeq(m) => merge_seq_enumerate(m)
     Loop(_) => Str(loop_object_keys)
     ClosureRef(_) => NonEnumerable
+    Group(_, _) => Seq(2)
     Custom(o) => o.enumerate()
   }
 }
@@ -253,6 +274,7 @@ pub fn DynObject::enumerator_len(self : DynObject) -> Int? {
     MergeSeq(m) => m.total_len
     Loop(_) => Some(loop_object_keys.length())
     ClosureRef(_) => None
+    Group(_, _) => Some(2)
     Custom(o) => o.enumerator_len()
   }
 }
@@ -387,6 +409,20 @@ fn DynObject::render(self : DynObject, f : @rfmt.Formatter) -> Unit {
     }
     Loop(l) => {
       f.write_str(l.render())
+      return
+    }
+    Group(grouper, list) => {
+      f
+      .debug_tuple("")
+      .field(f => grouper.fmt_debug(f))
+      .field(f => {
+        let l = f.debug_list()
+        for v in list {
+          l.entry(f => v.fmt_debug(f)) |> ignore
+        }
+        l.finish()
+      })
+      .finish()
       return
     }
     Custom(o) =>

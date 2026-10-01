@@ -8,6 +8,10 @@ pub fn char_to_lower(Char) -> String
 
 pub fn char_to_upper(Char) -> String
 
+pub fn is_case_ignorable(Char) -> Bool
+
+pub fn is_cased(Char) -> Bool
+
 pub fn is_lowercase(Char) -> Bool
 
 pub fn is_uppercase(Char) -> Bool

@@ -152,6 +152,9 @@ fn objects_equal(av : Value, a : DynObject, bv : Value, b : DynObject) -> Bool {
   if a.is_same_object(b) {
     return true
   }
+  if custom_object_cmp(a, bv) is Some(c) {
+    return c == 0
+  }
   match (a.repr(), b.repr()) {
     (Map, Map) => {
       let mut need_length_fallback = true
@@ -198,7 +201,36 @@ fn objects_equal(av : Value, a : DynObject, bv : Value, b : DynObject) -> Bool {
           }
         _ => false
       }
-    (Plain, Plain) => av.to_string() == bv.to_string()
+    (Plain, Plain) =>
+      if has_default_render(a) || has_default_render(b) {
+        // MiniJinja compares the debug representations here; objects
+        // without a custom rendering only compare equal to themselves.
+        false
+      } else {
+        av.to_string() == bv.to_string()
+      }
+    _ => false
+  }
+}
+
+///|
+/// Consults the `custom_cmp` hook of custom objects.
+fn custom_object_cmp(a : DynObject, other : Value) -> Int? {
+  match a.inner {
+    Custom(o) =>
+      match o.custom_cmp(other) {
+        Some(c) => Some(if c < 0 { -1 } else if c > 0 { 1 } else { 0 })
+        None => None
+      }
+    _ => None
+  }
+}
+
+///|
+/// Returns `true` for custom objects that do not provide a rendering.
+fn has_default_render(a : DynObject) -> Bool {
+  match a.inner {
+    Custom(o) => o.render() is None
     _ => false
   }
 }
@@ -245,6 +277,9 @@ pub fn Value::cmp(self : Value, other : Value) -> Int {
           if a.is_same_object(b) {
             return 0
           }
+          if custom_object_cmp(a, other) is Some(c) {
+            return c
+          }
           match (a.repr(), b.repr()) {
             (Map, Map) =>
               match (a.try_iter_pairs(), b.try_iter_pairs()) {
@@ -286,7 +321,12 @@ pub fn Value::cmp(self : Value, other : Value) -> Int {
                   }
                 _ => 0
               }
-            (Plain, Plain) => compare_str(self.to_string(), other.to_string())
+            (Plain, Plain) =>
+              if has_default_render(a) || has_default_render(b) {
+                compare_int64(a.id.to_int64(), b.id.to_int64())
+              } else {
+                compare_str(self.to_string(), other.to_string())
+              }
             _ => 0
           }
         }

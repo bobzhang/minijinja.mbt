@@ -1394,3 +1394,82 @@ test "value: custom_object_compare" {
   let rv = vt_render("{{ seq|sort|join('|') }}", [("seq", seq)])
   assert_eq(rv, "0|1|2|3|4")
 }
+
+///|
+struct NumObj {
+  n : Int
+}
+
+///|
+impl @minijinja.Object for NumObj with fn repr(_self) {
+  Plain
+}
+
+///|
+impl @minijinja.Object for NumObj with fn render(self) {
+  Some(self.n.to_string())
+}
+
+///|
+impl @minijinja.Object for NumObj with fn custom_cmp(self, other) {
+  let n = other.get_attr("n") catch { _ => return None }
+  match n.as_i64() {
+    Some(n) => Some(self.n.to_int64().compare(n))
+    None => None
+  }
+}
+
+///|
+impl @minijinja.Object for NumObj with fn get_value(self, key) {
+  if key.as_str() is Some("n") {
+    Some(@minijinja.Value::from_int(self.n))
+  } else {
+    None
+  }
+}
+
+///|
+struct Opaque {
+  n : Int
+}
+
+///|
+impl @minijinja.Object for Opaque with fn repr(_self) {
+  Plain
+}
+
+///|
+test "value: custom_cmp and plain object identity" {
+  let env = @minijinja.Environment::new()
+  let values = @minijinja.Value::from_array([
+    @minijinja.Value::from_object(NumObj::{ n: 10, }),
+    @minijinja.Value::from_object(NumObj::{ n: 2, }),
+  ])
+  let ctx = @minijinja.Value::from_pairs([("values", values)])
+  inspect(env.render_str("{{ values|sort|join(',') }}", ctx), content="2,10")
+  let a = @minijinja.Value::from_object(Opaque::{ n: 1, })
+  let b = @minijinja.Value::from_object(Opaque::{ n: 2, })
+  assert_true(a != b)
+  assert_true(a == a)
+}
+
+///|
+test "value: groupby pprint" {
+  let env = @minijinja.Environment::new()
+  inspect(
+    env.render_str(
+      "{{ ([{'x': 1}]|groupby('x'))[0]|pprint }}",
+      @minijinja.Value::none(),
+    ),
+    content=(
+      #|(
+      #|    1,
+      #|    [
+      #|        {
+      #|            'x': 1,
+      #|        },
+      #|    ],
+      #|)
+    ),
+  )
+}
