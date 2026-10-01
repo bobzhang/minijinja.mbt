@@ -249,7 +249,8 @@ test "errors" {
   match upstream).
 * `AutoEscape::None` is called `AutoEscape::NoEscape`, `ValueKind::None` is
   `ValueKind::Null`.
-* Not ported: the CLI, and the `datetime` feature of `minijinja-contrib`.
+* Not ported: the `datetime` feature of `minijinja-contrib`, and parts of
+  the CLI (see below).
 
 ## Contrib
 
@@ -258,6 +259,34 @@ compatibility methods (`unknown_method_callback`), extra filters
 (`pluralize`, `filesizeformat`, `truncate`, `striptags`, `wordcount`,
 `wordwrap`, `random`) and globals (`cycler`, `joiner`, `randrange`,
 `lipsum`).  See [contrib/README.mbt.md](contrib/README.mbt.md).
+
+## Command line tool
+
+[`cmd/minijinja`](cmd/minijinja/) ports `minijinja-cli` (the logic lives in
+the testable [`cli`](cli/) package, `@cli.run`).  It runs on the `native`
+and `wasm` backends and does its I/O through `moonbitlang/async`:
+
+```
+moon run cmd/minijinja -- hello.j2 hello.json
+moon run cmd/minijinja -- --template='Hello {{ name }}!' -Dname=World
+moon run cmd/minijinja -- --expr '1 + 1'
+moon run cmd/minijinja -- --help
+```
+
+All options of the upstream tool are supported except the ones listed
+below, with the same semantics, error messages and exit codes (`2` for usage
+errors, `1` for failures, the result for `--expr-out=status`): `-f/--format`,
+`-a/--autoescape`, `-D/--define`, `--strict`, `--no-include`, `--safe-path`,
+`--fuel`, `-n/--no-newline`, `--trim-blocks`, `--lstrip-blocks`,
+`--py-compat`, `-s/--syntax`, `--env`, `-t/--template`, `-E/--expr`,
+`--expr-out`, `--dump`, `-o/--output`, `--select`, `--help`, `--long-help`,
+`--syntax-help`, `-V/--version` and the `MINIJINJA_*` environment variables.
+Contrib filters and globals are always enabled.
+
+Not ported: the `yaml`, `toml`, `cbor`, `ini` and `json5` data formats (only
+`json` and `querystring` are available), the TOML config file
+(`--config-file`, `--print-config`), `--repl` and `--generate-completion`.
+Template paths are normalized lexically instead of being canonicalized.
 
 ## License
 

@@ -1,0 +1,21 @@
+import {
+  "bobzhang/minijinja",
+  "bobzhang/minijinja/contrib",
+  "bobzhang/minijinja/internal/rfmt",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/stdio",
+  "moonbitlang/async/os_error",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/env",
+  "moonbitlang/core/cmp",
+  "moonbitlang/core/int64",
+  "moonbitlang/core/uint64",
+}
+
+supported_targets = "native+wasm"
+
+warnings = "-implicit_impl_as_method"
+
+import {
+  "moonbitlang/async",
+} for "test"

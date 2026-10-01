@@ -1,0 +1,24 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/minijinja/cli"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub async fn run(ArrayView[String], env_vars? : Map[String, String], cwd? : String, stdin? : async () -> Bytes) -> Outcome
+
+pub let version : String
+
+// Errors
+
+// Types and methods
+pub(all) struct Outcome {
+  exit_code : Int
+  stdout : String
+  stderr : String
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
