@@ -92,20 +92,17 @@ test "environment: expression_undeclared_variables" {
 }
 
 ///|
-#skip("missing API: Environment::clone")
 test "environment: clone" {
   let env = @minijinja.Environment::new()
   env.add_template("test", "a")
-  // let env2 = env.clone()
-  // assert_eq(env2.get_template("test").render(()), "a")
-  // env2.add_template("test", "b")
-  // assert_eq(env2.get_template("test").render(()), "b")
+  let env2 = env.clone()
+  assert_eq(env2.get_template("test").render(@minijinja.Value::none()), "a")
+  env2.add_template("test", "b")
+  assert_eq(env2.get_template("test").render(@minijinja.Value::none()), "b")
   assert_eq(env.get_template("test").render(@minijinja.Value::none()), "a")
-  fail("Environment::clone is not available")
 }
 
 ///|
-#skip("port bug: Environment::globals returns insertion order, not sorted")
 test "environment: globals" {
   let env = @minijinja.Environment::new()
   env.add_global("a", @minijinja.Value::from_int(42))

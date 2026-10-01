@@ -491,9 +491,22 @@ pub fn Environment::remove_global(self : Environment, name : String) -> Unit {
 }
 
 ///|
-/// Returns all globals as name/value pairs.
+/// Returns all globals as name/value pairs (sorted by name).
 pub fn Environment::globals(self : Environment) -> Array[(String, Value)] {
-  self.globals.to_array()
+  sorted_keys(self.globals).map(k => (k, self.globals[k]))
+}
+
+///|
+/// Creates a copy of the environment.  Templates, filters, tests and
+/// globals added to the copy do not affect the original and vice versa.
+pub fn Environment::clone(self : Environment) -> Environment {
+  {
+    ..self,
+    templates: Map::from_iter(self.templates.iter()),
+    filters: Map::from_iter(self.filters.iter()),
+    tests: Map::from_iter(self.tests.iter()),
+    globals: Map::from_iter(self.globals.iter()),
+  }
 }
 
 ///|
