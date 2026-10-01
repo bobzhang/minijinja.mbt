@@ -16,6 +16,7 @@ pub struct State {
   priv mut loaded_templates : Set[String]
   priv id : Int
   priv fuel_tracker : FuelTracker?
+  priv extensions : Map[Int, () -> Unit]
 }
 
 ///|
@@ -142,6 +143,7 @@ fn State::new(
     blocks,
     loaded_templates: Set([]),
     id: state_id_counter.val,
+    extensions: Map::new(),
     fuel_tracker: match ctx.env.fuel {
       Some(fuel) => Some({ initial: fuel, remaining: fuel, })
       None => None
@@ -403,4 +405,89 @@ fn State::fmt_debug(self : State, f : @rfmt.Formatter) -> Unit {
   .field("ctx", f => self.ctx.fmt_debug(f))
   .field("env", f => self.env().fmt_debug(f))
   .finish()
+}
+
+///|
+let extension_key_counter : Ref[Int] = { val: 0, }
+
+///|
+/// A typed key for per-render [`State`] extensions.
+///
+/// Extensions let filters and functions keep their own state for the
+/// duration of a render (for instance a random number generator or a cache).
+/// Create one key per kind of extension (typically as a toplevel `let`).
+///
+/// ```mbt check
+/// test {
+///   let counter : @minijinja.ExtensionKey[Ref[Int]] = @minijinja.ExtensionKey::new()
+///   let env = @minijinja.Environment::new()
+///   env.add_function("count", (state, _args) => {
+///     let c = state.get_or_insert_extension(counter, () => { val: 0, })
+///     c.val += 1
+///     @minijinja.Value::from_int(c.val)
+///   })
+///   inspect(
+///     env.render_str(
+///       "{{ count() }}{{ count() }}{{ count() }}",
+///       @minijinja.Value::none(),
+///     ),
+///     content="123",
+///   )
+///   inspect(
+///     env.render_str("{{ count() }}", @minijinja.Value::none()),
+///     content="1",
+///   )
+/// }
+/// ```
+pub struct ExtensionKey[T] {
+  priv id : Int
+  priv mut slot : T?
+}
+
+///|
+/// Creates a new, unique extension key.
+pub fn[T] ExtensionKey::new() -> ExtensionKey[T] {
+  extension_key_counter.val += 1
+  { id: extension_key_counter.val, slot: None, }
+}
+
+///|
+/// Stores an extension value on the state (replacing an existing one).
+pub fn[T] State::set_extension(
+  self : State,
+  key : ExtensionKey[T],
+  value : T,
+) -> Unit {
+  self.extensions[key.id] = () => key.slot = Some(value)
+}
+
+///|
+/// Returns the extension value stored for `key`, if any.
+pub fn[T] State::get_extension(self : State, key : ExtensionKey[T]) -> T? {
+  match self.extensions.get(key.id) {
+    Some(load) => {
+      load()
+      let rv = key.slot
+      key.slot = None
+      rv
+    }
+    None => None
+  }
+}
+
+///|
+/// Returns the extension value for `key`, inserting `make()` if missing.
+pub fn[T] State::get_or_insert_extension(
+  self : State,
+  key : ExtensionKey[T],
+  make : () -> T,
+) -> T {
+  match self.get_extension(key) {
+    Some(v) => v
+    None => {
+      let v = make()
+      self.set_extension(key, v)
+      v
+    }
+  }
 }

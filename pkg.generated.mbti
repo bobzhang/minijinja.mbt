@@ -194,6 +194,11 @@ pub struct Expression {
 pub fn Expression::eval(Self, Value) -> Value raise TemplateError
 pub fn Expression::undeclared_variables(Self, nested? : Bool) -> Array[String]
 
+pub struct ExtensionKey[T] {
+  // private fields
+}
+pub fn[T] ExtensionKey::new() -> Self[T]
+
 pub(all) enum FormatStyle {
   Printf
   StrFormat
@@ -253,6 +258,8 @@ pub fn State::env(Self) -> Environment
 pub fn State::exports(Self) -> Array[String]
 pub fn State::format(Self, Value) -> String raise TemplateError
 pub fn State::fuel_levels(Self) -> (Int64, Int64)?
+pub fn[T] State::get_extension(Self, ExtensionKey[T]) -> T?
+pub fn[T] State::get_or_insert_extension(Self, ExtensionKey[T], () -> T) -> T
 pub fn State::get_temp(Self, String) -> Value?
 pub fn State::get_template(Self, String) -> Template raise TemplateError
 pub fn State::known_variables(Self) -> Array[String]
@@ -261,6 +268,7 @@ pub fn State::name(Self) -> String
 pub fn State::perform_test(Self, String, Array[Value]) -> Bool raise TemplateError
 pub fn State::render_block(Self, String) -> String raise TemplateError
 pub fn State::render_block_to(Self, String, (StringView) -> Unit raise) -> Unit raise TemplateError
+pub fn[T] State::set_extension(Self, ExtensionKey[T], T) -> Unit
 pub fn State::set_temp(Self, String, Value) -> Value?
 pub fn State::undefined_behavior(Self) -> UndefinedBehavior
 
