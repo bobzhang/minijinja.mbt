@@ -5,9 +5,17 @@ Rust's `unicode-ident` (XID_Start / XID_Continue), `char::is_uppercase`,
 `char::is_lowercase`, case folding (`unicase`) and the full case mappings used by `str::to_uppercase` /
 `str::to_lowercase` are approximated with the Unicode database shipped with
 the running Python interpreter.
+
+`char::is_alphabetic` (the derived `Alphabetic` property) cannot be computed
+from `unicodedata` alone (it needs `Other_Alphabetic`), so it is read from
+`DerivedCoreProperties.txt` of the same Unicode version.  The file is taken
+from `$UCD_DIR/DerivedCoreProperties.txt` when `UCD_DIR` is set and
+downloaded from unicode.org otherwise.
 """
+import os
 import sys
 import unicodedata
+import urllib.request
 
 MAX = 0x110000
 
@@ -67,6 +75,53 @@ def case_ignorable(cp):
     return unicodedata.category(c) in ("Mn", "Me", "Cf", "Lm", "Sk") or c in WORD_BREAK_MID
 
 
+def letter(cp):
+    # unicode_categories' `is_letter`: general category L*.
+    return unicodedata.category(chr(cp)) in ("Lu", "Ll", "Lt", "Lm", "Lo")
+
+
+def numeric(cp):
+    # Rust's `char::is_numeric`: general category Nd, Nl or No.
+    return unicodedata.category(chr(cp)) in ("Nd", "Nl", "No")
+
+
+def white_space(cp):
+    # Rust's `char::is_whitespace` (the White_Space property).  CPython's
+    # `isspace` additionally treats U+001C..U+001F (bidi class B/S) as
+    # whitespace, which White_Space does not.
+    return chr(cp).isspace() and not (0x1C <= cp <= 0x1F)
+
+
+def derived_core_property(prop):
+    version = unicodedata.unidata_version
+    ucd_dir = os.environ.get("UCD_DIR")
+    if ucd_dir:
+        with open(os.path.join(ucd_dir, "DerivedCoreProperties.txt"), encoding="utf-8") as f:
+            data = f.read()
+    else:
+        url = f"https://www.unicode.org/Public/{version}/ucd/DerivedCoreProperties.txt"
+        with urllib.request.urlopen(url) as f:
+            data = f.read().decode("utf-8")
+    first = data.splitlines()[0]
+    if version not in first:
+        raise SystemExit(f"DerivedCoreProperties.txt version mismatch: {first!r} vs {version}")
+    cps = set()
+    for line in data.splitlines():
+        line = line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        fields = [x.strip() for x in line.split(";")]
+        rng, name = fields[0], fields[1]
+        if name != prop:
+            continue
+        if ".." in rng:
+            a, b = rng.split("..")
+            cps.update(range(int(a, 16), int(b, 16) + 1))
+        else:
+            cps.add(int(rng, 16))
+    return cps
+
+
 def emit_ranges(out, name, rs):
     out.append("///|")
     out.append(f"let {name} : FixedArray[Int] = [")
@@ -123,6 +178,11 @@ def main():
     emit_ranges(out, "lowercase_table", ranges(lowercase))
     emit_ranges(out, "cased_table", ranges(cased))
     emit_ranges(out, "case_ignorable_table", ranges(case_ignorable))
+    alphabetic = derived_core_property("Alphabetic")
+    emit_ranges(out, "alphabetic_table", ranges(lambda cp: cp in alphabetic))
+    emit_ranges(out, "letter_table", ranges(letter))
+    emit_ranges(out, "numeric_table", ranges(numeric))
+    emit_ranges(out, "white_space_table", ranges(white_space))
     emit_mapping(out, "upper", lambda c: c.upper())
     # Python lowercases U+0130 to "i̇" like Rust; final sigma is handled
     # by the caller.

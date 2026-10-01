@@ -8,13 +8,23 @@ pub fn char_to_lower(Char) -> String
 
 pub fn char_to_upper(Char) -> String
 
+pub fn is_alphabetic(Char) -> Bool
+
+pub fn is_alphanumeric(Char) -> Bool
+
 pub fn is_case_ignorable(Char) -> Bool
 
 pub fn is_cased(Char) -> Bool
 
+pub fn is_letter(Char) -> Bool
+
 pub fn is_lowercase(Char) -> Bool
 
+pub fn is_numeric(Char) -> Bool
+
 pub fn is_uppercase(Char) -> Bool
+
+pub fn is_whitespace(Char) -> Bool
 
 pub fn is_xid_continue(Char) -> Bool
 
@@ -23,6 +33,12 @@ pub fn is_xid_start(Char) -> Bool
 pub fn to_lower(StringView) -> String
 
 pub fn to_upper(StringView) -> String
+
+pub fn trim(StringView) -> StringView
+
+pub fn trim_end(StringView) -> StringView
+
+pub fn trim_start(StringView) -> StringView
 
 // Errors
 
