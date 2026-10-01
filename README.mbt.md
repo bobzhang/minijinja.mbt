@@ -249,7 +249,15 @@ test "errors" {
   match upstream).
 * `AutoEscape::None` is called `AutoEscape::NoEscape`, `ValueKind::None` is
   `ValueKind::Null`.
-* Not ported (yet): `minijinja-contrib` and the CLI.
+* Not ported: the CLI, and the `datetime` feature of `minijinja-contrib`.
+
+## Contrib
+
+The [`contrib`](contrib/) package ports `minijinja-contrib`: Python
+compatibility methods (`unknown_method_callback`), extra filters
+(`pluralize`, `filesizeformat`, `truncate`, `striptags`, `wordcount`,
+`wordwrap`, `random`) and globals (`cycler`, `joiner`, `randrange`,
+`lipsum`).  See [contrib/README.mbt.md](contrib/README.mbt.md).
 
 ## License
 

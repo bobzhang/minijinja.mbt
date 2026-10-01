@@ -146,8 +146,12 @@ three.
   wasm, wasm-gc and js backends (the corpus runners need file IO and run on
   native and wasm only).
 * Two Codex review rounds (`docs/codex-review-*.md`) were addressed.
-* `fuel` is ported; `minijinja-contrib` is being ported in `contrib/`
-  (without the `datetime` feature which depends on `jiff`).
+* `fuel` is ported, as are typed per-render `State` extensions
+  (`ExtensionKey[T]`).
+* `minijinja-contrib` is ported in `contrib/` (pycompat, filters, globals,
+  random; without the `datetime` feature which depends on `jiff`).  All
+  upstream contrib tests pass on every backend.
+* Not ported: the CLI.
 * Benchmarks mirroring upstream live in `bench/`
   (`moon bench --target native --release bench`).
 
