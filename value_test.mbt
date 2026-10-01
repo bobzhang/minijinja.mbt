@@ -1186,7 +1186,6 @@ test "value: map_eq" {
 }
 
 ///|
-#skip("port bug: from_bigint(i64::MAX) is stored as I64, so it compares equal to 2^63 as f64")
 test "value: float_eq" {
   let a = @minijinja.Value::from_bigint(9007199254740992N)
   let b = @minijinja.Value::from_double(@math.pow(2.0, 53.0))

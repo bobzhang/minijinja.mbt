@@ -119,10 +119,19 @@ pub fn Value::from_double(f : Double) -> Value {
 }
 
 ///|
-/// Creates a value from a big integer.  Values that fit into 64 bits are
-/// stored as such, values outside of the 128 bit range become invalid.
+/// Creates a value from a big integer.
+///
+/// Like Rust's `Value::from(i128)` / `Value::from(u128)` the value is stored
+/// as a 128 bit integer (signed if it fits, unsigned otherwise).  Values
+/// outside of the 128 bit range become invalid values.
 pub fn Value::from_bigint(i : BigInt) -> Value {
-  int_as_value(i)
+  if in_i128(i) {
+    I128(i)
+  } else if i >= 0N && i <= u128_max {
+    U128(i)
+  } else {
+    Invalid(TemplateError::new(InvalidOperation, "integer out of range"))
+  }
 }
 
 ///|
