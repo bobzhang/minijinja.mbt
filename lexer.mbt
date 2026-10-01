@@ -326,17 +326,28 @@ fn Tokenizer::next_token(
       // line statements normally close with newlines.  At the end of the
       // file however we need to use the stack to close out the block.
       if self.stack.pop() is Some(LineStatement) {
-        return Some((BlockEnd, self.span(self.loc())))
+        return Some(
+          (
+            BlockEnd,
+            self.span_from(
+              self.current_line,
+              self.current_col,
+              self.current_offset,
+            ),
+          ),
+        )
       }
       return None
     }
-    let outcome = match self.stack.last() {
-      Some(Template) => self.tokenize_root()
-      Some(Block) => self.tokenize_block_or_var(BlockSentinel::Block)
-      Some(LineStatement) =>
-        self.tokenize_block_or_var(BlockSentinel::LineStatement)
-      Some(Variable) => self.tokenize_block_or_var(BlockSentinel::Variable)
-      None => abort("empty lexer stack")
+    let depth = self.stack.length()
+    if depth == 0 {
+      abort("empty lexer stack")
+    }
+    let outcome = match self.stack[depth - 1] {
+      Template => self.tokenize_root()
+      Block => self.tokenize_block_or_var(BlockSentinel::Block)
+      LineStatement => self.tokenize_block_or_var(BlockSentinel::LineStatement)
+      Variable => self.tokenize_block_or_var(BlockSentinel::Variable)
     }
     if outcome is Some(_) {
       return outcome
@@ -380,13 +391,12 @@ fn Tokenizer::advance(self : Tokenizer, n : Int) -> StringView {
 }
 
 ///|
-fn Tokenizer::loc(self : Tokenizer) -> (Int, Int, Int) {
-  (self.current_line, self.current_col, self.current_offset)
-}
-
-///|
-fn Tokenizer::span(self : Tokenizer, loc : (Int, Int, Int)) -> Span {
-  let (start_line, start_col, start_offset) = loc
+fn Tokenizer::span_from(
+  self : Tokenizer,
+  start_line : Int,
+  start_col : Int,
+  start_offset : Int,
+) -> Span {
   {
     start_line,
     start_col,
@@ -399,7 +409,11 @@ fn Tokenizer::span(self : Tokenizer, loc : (Int, Int, Int)) -> Span {
 
 ///|
 fn Tokenizer::syntax_error(self : Tokenizer, msg : String) -> TemplateError {
-  let span = self.span(self.loc())
+  let span = self.span_from(
+    self.current_line,
+    self.current_col,
+    self.current_offset,
+  )
   let span = if span.start_col == span.end_col {
     { ..span, end_col: span.end_col + 1, end_offset: span.end_offset + 1, }
   } else {
@@ -451,7 +465,9 @@ let max_u128_big : BigInt = (1N << 128) - 1N
 
 ///|
 fn Tokenizer::eat_number(self : Tokenizer) -> (Token, Span) raise TemplateError {
-  let old_loc = self.loc()
+  let old_line = self.current_line
+  let old_col = self.current_col
+  let old_off = self.current_offset
   let off = self.current_offset
   let u0 = unit_at(self.source, off)
   let u1 = unit_at(self.source, off + 1)
@@ -533,7 +549,7 @@ fn Tokenizer::eat_number(self : Tokenizer) -> (Token, Span) raise TemplateError 
       _ => raise self.syntax_error("invalid integer (too large)")
     }
   }
-  (token, self.span(old_loc))
+  (token, self.span_from(old_line, old_col, old_off))
 }
 
 ///|
@@ -562,9 +578,11 @@ fn Tokenizer::eat_identifier(
 ) -> (Token, Span) raise TemplateError {
   let ident_len = lex_identifier(self.source, self.current_offset)
   if ident_len > 0 {
-    let old_loc = self.loc()
+    let old_line = self.current_line
+    let old_col = self.current_col
+    let old_off = self.current_offset
     let ident = self.advance(ident_len).to_owned()
-    (Ident(ident), self.span(old_loc))
+    (Ident(ident), self.span_from(old_line, old_col, old_off))
   } else {
     raise self.syntax_error("unexpected character")
   }
@@ -575,7 +593,9 @@ fn Tokenizer::eat_string(
   self : Tokenizer,
   delim : Int,
 ) -> (Token, Span) raise TemplateError {
-  let old_loc = self.loc()
+  let old_line = self.current_line
+  let old_col = self.current_col
+  let old_off = self.current_offset
   let off = self.current_offset
   let mut escaped = false
   let mut has_escapes = false
@@ -600,9 +620,9 @@ fn Tokenizer::eat_string(
   let s = self.advance(str_len + 2)
   let inner = s.view(start_offset=1, end_offset=s.length() - 1)
   if has_escapes {
-    (OwnedStr(unescape(inner)), self.span(old_loc))
+    (OwnedStr(unescape(inner)), self.span_from(old_line, old_col, old_off))
   } else {
-    (Str(inner.to_owned()), self.span(old_loc))
+    (Str(inner.to_owned()), self.span_from(old_line, old_col, old_off))
   }
 }
 
@@ -650,7 +670,9 @@ fn Tokenizer::tokenize_root(
     self.trim_leading_whitespace = false
     self.skip_whitespace()
   }
-  let old_loc = self.loc()
+  let old_line = self.current_line
+  let old_col = self.current_col
+  let old_off = self.current_offset
   let offset = self.current_offset
   let (lead, span) = match
     find_start_marker(self.source, offset, self.syntax_config) {
@@ -669,13 +691,13 @@ fn Tokenizer::tokenize_root(
           )
           let trimmed = lstrip_block(peeked)
           let lead = self.advance(trimmed.length())
-          let span = self.span(old_loc)
+          let span = self.span_from(old_line, old_col, old_off)
           self.advance(peeked.length() - trimmed.length()) |> ignore
           (lead, span)
         }
         Default | Preserve => {
           let lead = self.advance(start)
-          (lead, self.span(old_loc))
+          (lead, self.span_from(old_line, old_col, old_off))
         }
         Remove => {
           let peeked = self.source.view(
@@ -684,7 +706,7 @@ fn Tokenizer::tokenize_root(
           )
           let trimmed = trim_end_view(peeked)
           let lead = self.advance(trimmed.length())
-          let span = self.span(old_loc)
+          let span = self.span_from(old_line, old_col, old_off)
           self.advance(peeked.length() - trimmed.length()) |> ignore
           (lead, span)
         }
@@ -692,7 +714,7 @@ fn Tokenizer::tokenize_root(
     }
     None => {
       let lead = self.advance(self.rest_len())
-      (lead, self.span(old_loc))
+      (lead, self.span_from(old_line, old_col, old_off))
     }
   }
   if lead.length() == 0 {
@@ -728,10 +750,12 @@ fn Tokenizer::handle_start_marker(
       }
     }
     Variable => {
-      let old_loc = self.loc()
+      let old_line = self.current_line
+      let old_col = self.current_col
+      let old_off = self.current_offset
       self.advance(skip) |> ignore
       self.stack.push(LexerState::Variable)
-      Some((VariableStart, self.span(old_loc)))
+      Some((VariableStart, self.span_from(old_line, old_col, old_off)))
     }
     Block =>
       // raw blocks require some special handling.  If we are at the
@@ -751,17 +775,21 @@ fn Tokenizer::handle_start_marker(
           self.handle_raw_tag(ws_start)
         }
         None => {
-          let old_loc = self.loc()
+          let old_line = self.current_line
+          let old_col = self.current_col
+          let old_off = self.current_offset
           self.advance(skip) |> ignore
           self.stack.push(LexerState::Block)
-          Some((BlockStart, self.span(old_loc)))
+          Some((BlockStart, self.span_from(old_line, old_col, old_off)))
         }
       }
     LineStatement => {
-      let old_loc = self.loc()
+      let old_line = self.current_line
+      let old_col = self.current_col
+      let old_off = self.current_offset
       self.advance(skip) |> ignore
       self.stack.push(LexerState::LineStatement)
-      Some((BlockStart, self.span(old_loc)))
+      Some((BlockStart, self.span_from(old_line, old_col, old_off)))
     }
     LineComment => {
       let base = self.current_offset + skip
@@ -785,7 +813,9 @@ fn Tokenizer::handle_raw_tag(
   self : Tokenizer,
   ws_start : Whitespace,
 ) -> (Token, Span)? raise TemplateError {
-  let old_loc = self.loc()
+  let old_line = self.current_line
+  let old_col = self.current_col
+  let old_off = self.current_offset
   let block_start = self.syntax_config.block_start
   let block_end = self.syntax_config.block_end
   let offset = self.current_offset
@@ -801,7 +831,7 @@ fn Tokenizer::handle_raw_tag(
         end_offset=offset + end,
       )
       self.advance(end) |> ignore
-      let span = self.span(old_loc)
+      let span = self.span_from(old_line, old_col, old_off)
       self.advance(block_start.length() + endraw) |> ignore
       match ws_start {
         Default if self.ws_config.trim_blocks => {
@@ -833,7 +863,9 @@ fn Tokenizer::tokenize_block_or_var(
   self : Tokenizer,
   sentinel : BlockSentinel,
 ) -> (Token, Span)? raise TemplateError {
-  let old_loc = self.loc()
+  let old_line = self.current_line
+  let old_col = self.current_col
+  let old_off = self.current_offset
   let off = self.current_offset
   let source = self.source
 
@@ -852,7 +884,7 @@ fn Tokenizer::tokenize_block_or_var(
     if was_nl {
       self.advance(skip + nl_skip) |> ignore
       self.stack.pop() |> ignore
-      return Some((BlockEnd, self.span(old_loc)))
+      return Some((BlockEnd, self.span_from(old_line, old_col, old_off)))
     }
   }
 
@@ -878,7 +910,7 @@ fn Tokenizer::tokenize_block_or_var(
           self.stack.pop() |> ignore
           let was_minus = c0 == '-'.to_int()
           self.advance(block_end.length() + 1) |> ignore
-          let span = self.span(old_loc)
+          let span = self.span_from(old_line, old_col, old_off)
           if was_minus {
             self.trim_leading_whitespace = true
           }
@@ -887,7 +919,7 @@ fn Tokenizer::tokenize_block_or_var(
         if starts_with_at(source, off, block_end) {
           self.stack.pop() |> ignore
           self.advance(block_end.length()) |> ignore
-          let span = self.span(old_loc)
+          let span = self.span_from(old_line, old_col, old_off)
           self.skip_newline_if_trim_blocks()
           return Some((BlockEnd, span))
         }
@@ -900,7 +932,7 @@ fn Tokenizer::tokenize_block_or_var(
           self.stack.pop() |> ignore
           let was_minus = c0 == '-'.to_int()
           self.advance(variable_end.length() + 1) |> ignore
-          let span = self.span(old_loc)
+          let span = self.span_from(old_line, old_col, old_off)
           if was_minus {
             self.trim_leading_whitespace = true
           }
@@ -909,7 +941,7 @@ fn Tokenizer::tokenize_block_or_var(
         if starts_with_at(source, off, variable_end) {
           self.stack.pop() |> ignore
           self.advance(variable_end.length()) |> ignore
-          return Some((VariableEnd, self.span(old_loc)))
+          return Some((VariableEnd, self.span_from(old_line, old_col, old_off)))
         }
       }
       // line statements are handled above
@@ -920,18 +952,25 @@ fn Tokenizer::tokenize_block_or_var(
   // two character operators
   let c0 = unit_at(source, off)
   let c1 = unit_at(source, off + 1)
-  let two = match (c0, c1) {
-    (0x2F, 0x2F) => Some(Token::FloorDiv) // //
-    (0x2A, 0x2A) => Some(Token::Pow) // **
-    (0x3D, 0x3D) => Some(Token::Eq) // ==
-    (0x21, 0x3D) => Some(Token::Ne) // !=
-    (0x3E, 0x3D) => Some(Token::Gte) // >=
-    (0x3C, 0x3D) => Some(Token::Lte) // <=
-    _ => None
+  let two : Token? = if c1 == 0x3D {
+    // `=` as the second character
+    match c0 {
+      0x3D => Some(Token::Eq) // ==
+      0x21 => Some(Token::Ne) // !=
+      0x3E => Some(Token::Gte) // >=
+      0x3C => Some(Token::Lte) // <=
+      _ => None
+    }
+  } else if c0 == 0x2F && c1 == 0x2F {
+    Some(Token::FloorDiv) // //
+  } else if c0 == 0x2A && c1 == 0x2A {
+    Some(Token::Pow) // **
+  } else {
+    None
   }
   if two is Some(op) {
     self.advance(2) |> ignore
-    return Some((op, self.span(old_loc)))
+    return Some((op, self.span_from(old_line, old_col, old_off)))
   }
 
   // single character operators (and strings)
@@ -981,7 +1020,7 @@ fn Tokenizer::tokenize_block_or_var(
   match op {
     Some(op) => {
       self.advance(1) |> ignore
-      Some((op, self.span(old_loc)))
+      Some((op, self.span_from(old_line, old_col, old_off)))
     }
     None => Some(self.eat_identifier())
   }

@@ -12,7 +12,7 @@ measured with `cargo bench --bench templates` on the same machine):
 
 | benchmark      | MiniJinja (Rust) | minijinja.mbt |
 |----------------|-----------------:|--------------:|
-| compile        |           8.4 µs |         37 µs |
+| compile        |           8.4 µs |         24 µs |
 | render         |            50 µs |         95 µs |
 | loop_map_items |           3.0 ms |        3.4 ms |
 | tuple_ops      |            49 µs |         76 µs |

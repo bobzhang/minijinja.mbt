@@ -65,7 +65,11 @@ fn[T] capture(f : () -> T raise TemplateError) -> Result[T, TemplateError] {
 /// Advance the stream.
 fn TokenStream::next(self : TokenStream) -> (Token, Span)? raise TemplateError {
   let rv = self.current
-  self.current = capture(() => self.tokenizer.next_token())
+  self.current = try self.tokenizer.next_token() catch {
+    err => Err(err)
+  } noraise {
+    tok => Ok(tok)
+  }
   match rv {
     Ok(Some((token, span))) => {
       self.last_span = span
