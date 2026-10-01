@@ -753,6 +753,11 @@ fn parse_usize(s : StringView) -> Int? {
 pub fn Value::to_string(self : Value) -> String {
   match self {
     Str(s, _) => s
+    I64(v) => v.to_string()
+    U64(v) => v.to_string()
+    Bool(b) => if b { "True" } else { "False" }
+    NoneValue => "None"
+    Undefined(_) => ""
     _ => {
       let f = @rfmt.Formatter::new()
       self.fmt_display(f)
