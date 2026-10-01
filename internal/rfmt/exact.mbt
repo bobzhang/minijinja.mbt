@@ -81,7 +81,10 @@ pub fn round_digits(digits : String, point : Int, keep : Int) -> (String, Int) {
       }
     }
     if carry {
+      // 99.9 -> 100: the digit string keeps its length (the dropped last
+      // digit is always a zero) and the decimal point moves.
       retained.insert(0, '1')
+      retained.truncate(keep)
       point += 1
     }
   }

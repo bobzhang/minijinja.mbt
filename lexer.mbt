@@ -549,7 +549,11 @@ fn parse_rust_float(s : String) -> Double raise {
     s.has_suffix("-") {
     fail("invalid float")
   }
-  @string.parse_double(s)
+  // the lexer validated the syntax, so a failure here is an overflow which
+  // Rust turns into an infinity
+  @string.parse_double(s) catch {
+    _ => 1.0 / 0.0
+  }
 }
 
 ///|

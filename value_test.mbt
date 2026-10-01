@@ -1473,3 +1473,42 @@ test "value: groupby pprint" {
     ),
   )
 }
+
+///|
+test "review2: formatting, json, kwargs" {
+  let env = @minijinja.Environment::new()
+  let none = @minijinja.Value::none()
+  inspect(env.render_str("{{ '%.1e'|format(9.99) }}", none), content="1.0e+01")
+  inspect(env.render_str("{{ '%.1g'|format(9.99) }}", none), content="1e+01")
+  inspect(env.render_str("{{ 1e400 }}", none), content="inf")
+  inspect(
+    env.render_str("{{ {range: 1}|tojson }}", none),
+    content="{\"minijinja::functions::builtins::range\": 1}",
+  )
+  inspect(
+    @minijinja.Value::from_json_str("-0").to_json_string(),
+    content="-0.0",
+  )
+  for bad in ["01", "\"a\nb\"", "\"\\uD800\"", "1.", "-", "+1", ".5", "1e"] {
+    assert_false(json_parses(bad), msg="accepted \{bad}")
+  }
+  let kw = @minijinja.Kwargs::from_pairs([
+    ("n", @minijinja.Value::from_string("x")),
+  ])
+  let _ = kw.get_int("n") catch { _ => None }
+  assert_false(all_kwargs_used(kw))
+}
+
+///|
+fn json_parses(s : String) -> Bool {
+  let _ = @minijinja.Value::from_json_str(s) catch { _ => return false }
+  true
+}
+
+///|
+fn all_kwargs_used(kw : @minijinja.Kwargs) -> Bool {
+  kw.assert_all_used() catch {
+    _ => return false
+  }
+  true
+}

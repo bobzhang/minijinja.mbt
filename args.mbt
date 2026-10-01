@@ -73,7 +73,14 @@ pub fn Kwargs::get_opt(
   self : Kwargs,
   key : String,
 ) -> Value? raise TemplateError {
-  let rv = match self.values.get(Value::from_string(key)) {
+  let rv = self.peek_opt(key)
+  self.used.add(key)
+  rv
+}
+
+///|
+fn Kwargs::peek_opt(self : Kwargs, key : String) -> Value? raise TemplateError {
+  match self.values.get(Value::from_string(key)) {
     Some(v) if v.is_undefined() || v.is_none() => None
     Some(v) => {
       if v.is_kwargs() {
@@ -81,6 +88,20 @@ pub fn Kwargs::get_opt(
       }
       Some(v)
     }
+    None => None
+  }
+}
+
+///|
+/// Converts an optional keyword argument and marks it used only if the
+/// conversion succeeded (like MiniJinja's `Kwargs::get`).
+fn[T] Kwargs::get_converted(
+  self : Kwargs,
+  key : String,
+  convert : (Value) -> T raise TemplateError,
+) -> T? raise TemplateError {
+  let rv = match self.peek_opt(key) {
+    Some(v) => Some(convert(v))
     None => None
   }
   self.used.add(key)
@@ -93,10 +114,7 @@ pub fn Kwargs::get_bool(
   self : Kwargs,
   key : String,
 ) -> Bool? raise TemplateError {
-  match self.get_opt(key) {
-    Some(v) => Some(value_to_bool(v))
-    None => None
-  }
+  self.get_converted(key, value_to_bool)
 }
 
 ///|
@@ -105,10 +123,7 @@ pub fn Kwargs::get_int(
   self : Kwargs,
   key : String,
 ) -> Int64? raise TemplateError {
-  match self.get_opt(key) {
-    Some(v) => Some(value_to_i64(v))
-    None => None
-  }
+  self.get_converted(key, value_to_i64)
 }
 
 ///|
@@ -117,10 +132,7 @@ pub fn Kwargs::get_usize(
   self : Kwargs,
   key : String,
 ) -> Int? raise TemplateError {
-  match self.get_opt(key) {
-    Some(v) => Some(value_to_usize(v))
-    None => None
-  }
+  self.get_converted(key, value_to_usize)
 }
 
 ///|
@@ -129,10 +141,7 @@ pub fn Kwargs::get_str(
   self : Kwargs,
   key : String,
 ) -> String? raise TemplateError {
-  match self.get_opt(key) {
-    Some(v) => Some(value_to_str(v))
-    None => None
-  }
+  self.get_converted(key, value_to_str)
 }
 
 ///|

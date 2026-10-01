@@ -170,12 +170,36 @@ fn JsonParser::parse_string(self : JsonParser) -> String raise TemplateError {
                 self.pos = save
               }
             }
+            if cp >= 0xD800 && cp <= 0xDFFF {
+              raise self.error("lone leading surrogate in hex escape")
+            }
             sb.write_char(cp.unsafe_to_char())
           }
           _ => raise self.error("invalid escape")
         }
       }
-      c => sb.write_char(c.to_int().unsafe_to_char())
+      c => {
+        let u = c.to_int()
+        if u < 0x20 {
+          raise self.error("control character in string")
+        }
+        if u >= 0xD800 && u <= 0xDBFF {
+          // a surrogate pair in the source text
+          let lo = unit_at(self.src, self.pos)
+          if lo >= 0xDC00 && lo <= 0xDFFF {
+            self.pos += 1
+            sb.write_char(
+              (0x10000 + ((u - 0xD800) << 10) + (lo - 0xDC00)).unsafe_to_char(),
+            )
+            continue
+          }
+          raise self.error("invalid unicode code point")
+        }
+        if u >= 0xDC00 && u <= 0xDFFF {
+          raise self.error("invalid unicode code point")
+        }
+        sb.write_char(u.unsafe_to_char())
+      }
     }
   }
   sb.to_string()
@@ -183,48 +207,73 @@ fn JsonParser::parse_string(self : JsonParser) -> String raise TemplateError {
 
 ///|
 fn JsonParser::parse_number(self : JsonParser) -> Value raise TemplateError {
+  // JSON grammar: -?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?
   let start = self.pos
-  let mut is_float = false
-  if unit_at(self.src, self.pos) == '-'.to_int() {
+  let negative = unit_at(self.src, self.pos) == '-'.to_int()
+  if negative {
     self.pos += 1
   }
-  while self.pos < self.src.length() {
-    match self.src[self.pos] {
-      '0'..='9' => self.pos += 1
-      '.' | 'e' | 'E' | '+' | '-' => {
-        is_float = true
-        self.pos += 1
-      }
-      _ => break
+  let digits_start = self.pos
+  if unit_at(self.src, self.pos) == '0'.to_int() {
+    self.pos += 1
+  } else if is_digit_unit(unit_at(self.src, self.pos)) {
+    while is_digit_unit(unit_at(self.src, self.pos)) {
+      self.pos += 1
+    }
+  } else {
+    raise self.error("invalid number")
+  }
+  let int_end = self.pos
+  let mut is_float = false
+  if unit_at(self.src, self.pos) == '.'.to_int() {
+    is_float = true
+    self.pos += 1
+    if !is_digit_unit(unit_at(self.src, self.pos)) {
+      raise self.error("invalid number")
+    }
+    while is_digit_unit(unit_at(self.src, self.pos)) {
+      self.pos += 1
+    }
+  }
+  let e = unit_at(self.src, self.pos)
+  if e == 'e'.to_int() || e == 'E'.to_int() {
+    is_float = true
+    self.pos += 1
+    let sign = unit_at(self.src, self.pos)
+    if sign == '+'.to_int() || sign == '-'.to_int() {
+      self.pos += 1
+    }
+    if !is_digit_unit(unit_at(self.src, self.pos)) {
+      raise self.error("invalid number")
+    }
+    while is_digit_unit(unit_at(self.src, self.pos)) {
+      self.pos += 1
     }
   }
   let text = self.src.view(start_offset=start, end_offset=self.pos).to_owned()
-  if text.is_empty() || text == "-" {
-    raise self.error("invalid value")
-  }
   if !is_float {
-    match
-      parse_uint_radix(
-        if text.has_prefix("-") {
-          text.view(start_offset=1)
-        } else {
-          text[:]
-        },
+    guard parse_uint_radix(
+        self.src.view(start_offset=digits_start, end_offset=int_end),
         10,
-      ) {
-      Some(v) => {
-        let v = if text.has_prefix("-") { -v } else { v }
-        if v >= 0N && v <= max_u64_big {
-          return Value::from_uint64(v.to_uint64())
-        } else if in_i64(v) {
-          return Value::from_int64(v.to_int64())
-        }
+      )
+      is Some(magnitude) else {
+      raise self.error("invalid number")
+    }
+    if negative {
+      // like serde_json, `-0` becomes a negative zero float
+      if magnitude.is_zero() {
+        return Value::from_double(-0.0)
       }
-      None => raise self.error("invalid number")
+      let v = -magnitude
+      if in_i64(v) {
+        return Value::from_int64(v.to_int64())
+      }
+    } else if magnitude <= max_u64_big {
+      return Value::from_uint64(magnitude.to_uint64())
     }
   }
   let f = @string.parse_double(text) catch {
-    _ => raise self.error("invalid number")
+    _ => raise self.error("number out of range")
   }
   Value::from_double(f)
 }
@@ -458,6 +507,8 @@ fn write_json(
                   write_json_string(sb, if b { "true" } else { "false" })
                 F64(f) if !f.is_nan() && !f.is_inf() =>
                   write_json_string(sb, json_float(f))
+                Object(o) if o.repr() is Plain =>
+                  write_json_string(sb, k.to_string())
                 F64(_) =>
                   raise TemplateError::new(
                     BadSerialization,
