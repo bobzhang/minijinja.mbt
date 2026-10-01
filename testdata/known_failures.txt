@@ -1,17 +1,1 @@
 # Snapshot cases that do not pass yet (suite/name).
-templates/adding.txt
-templates/debug.txt
-templates/err_bad_nested_subtraction.txt
-templates/err_bad_range.txt
-templates/err_bad_recursion.txt
-templates/err_bad_test.txt
-templates/err_bad_test_arguments.txt
-templates/err_in_include.txt
-templates/filters.txt
-templates/loop-recursion-error.txt
-templates/loop_bad_unpacking.txt
-templates/loop_bad_unpacking_wrong_len.txt
-templates/macro_import2.txt
-templates/mul.txt
-templates/namespace_bad.txt
-templates/slicing.txt

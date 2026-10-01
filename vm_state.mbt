@@ -228,7 +228,7 @@ pub fn State::render_block(
 ///|
 /// Returns a list of the names of all exports (top-level variables).
 pub fn State::exports(self : State) -> Array[String] {
-  self.ctx.exports().keys().to_array()
+  sorted_keys(self.ctx.exports())
 }
 
 ///|

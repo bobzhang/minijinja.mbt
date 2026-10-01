@@ -118,7 +118,7 @@ pub fn Template::undeclared_variables(
     _ => return []
   }
   let rv = find_undeclared(ast, nested).to_array()
-  rv.sort()
+  rv.sort_by((a, b) => compare_str(a, b))
   rv
 }
 
@@ -192,6 +192,6 @@ pub fn Expression::undeclared_variables(
 ) -> Array[String] {
   let expr = parse_expr(self.instructions.source) catch { _ => return [] }
   let rv = find_undeclared(EmitExpr({ expr, span: Span::default(), }), nested).to_array()
-  rv.sort()
+  rv.sort_by((a, b) => compare_str(a, b))
   rv
 }

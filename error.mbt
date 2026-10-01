@@ -462,7 +462,7 @@ fn TemplateError::render_debug_info(
     f.write_str("No referenced variables")
   } else {
     let keys = vars.keys().to_array()
-    keys.sort()
+    keys.sort_by((a, b) => compare_str(a, b))
     let s = f.debug_struct("Referenced variables:")
     for key in keys {
       s.field(key, f => vars[key].fmt_debug(f)) |> ignore

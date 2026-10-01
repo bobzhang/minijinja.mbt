@@ -233,7 +233,7 @@ pub fn DynObject::enumerate(self : DynObject) -> Enumerator {
     }
     Namespace(m) => {
       let keys = m.keys().to_array()
-      keys.sort()
+      keys.sort_by((a, b) => compare_str(a, b))
       Values(keys.map(Value::from_string))
     }
     MergeSeq(m) => merge_seq_enumerate(m)
@@ -575,7 +575,7 @@ impl Object for FunctionObject with fn call(self, state, args) {
 
 ///|
 impl Object for FunctionObject with fn render(self) {
-  Some("<function \{self.name}>")
+  Some(self.name)
 }
 
 ///|

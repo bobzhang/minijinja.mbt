@@ -940,46 +940,64 @@ fn value_slice(
         return Value::from_tuple(slice_array(values, start, stop, step))
       }
       if step > 0L {
-        let len = obj.enumerator_len().unwrap_or(0)
-        let (s, len) = get_offset_and_len(start, stop, () => len)
+        let total = obj.enumerator_len()
+        let (s, len) = get_offset_and_len(start, stop, () => total.unwrap_or(0))
         let step = step.to_int()
+        // like Rust's `skip(s).take(len).step_by(step)` the size is known if
+        // the length of the underlying object is known.
+        let size_hint = match total {
+          Some(n) => {
+            let avail = if n - s < 0 {
+              0
+            } else if n - s < len {
+              n - s
+            } else {
+              len
+            }
+            Some((avail + step - 1) / step)
+          }
+          None => None
+        }
         Value::make_iterable(() => {
           match obj.try_iter() {
             Some(iter) => {
               let mut skipped = false
               let mut remaining = len
-              Iter::new(() => {
-                if !skipped {
-                  skipped = true
-                  for _ in 0..<s {
+              Iter::new(
+                () => {
+                  if !skipped {
+                    skipped = true
+                    for _ in 0..<s {
+                      if iter.next() is None {
+                        remaining = 0
+                        break
+                      }
+                    }
+                  }
+                  if remaining <= 0 {
+                    return None
+                  }
+                  let rv = iter.next()
+                  if rv is None {
+                    remaining = 0
+                    return None
+                  }
+                  remaining -= 1
+                  // skip step - 1 items
+                  for _ in 1..<step {
+                    if remaining <= 0 {
+                      break
+                    }
                     if iter.next() is None {
                       remaining = 0
                       break
                     }
+                    remaining -= 1
                   }
-                }
-                if remaining <= 0 {
-                  return None
-                }
-                let rv = iter.next()
-                if rv is None {
-                  remaining = 0
-                  return None
-                }
-                remaining -= 1
-                // skip step - 1 items
-                for _ in 1..<step {
-                  if remaining <= 0 {
-                    break
-                  }
-                  if iter.next() is None {
-                    remaining = 0
-                    break
-                  }
-                  remaining -= 1
-                }
-                rv
-              })
+                  rv
+                },
+                size_hint?,
+              )
             }
             None => Iter::empty()
           }

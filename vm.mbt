@@ -636,8 +636,9 @@ fn do_eval(
           let captured = stack.pop()
           let locals = state.ctx.current_locals()
           let values : Map[Value, Value] = Map::new()
-          for key, value in locals {
-            values[Value::from_string(key)] = value
+          // locals are a BTreeMap in MiniJinja, so exports are sorted
+          for key in sorted_keys(locals) {
+            values[Value::from_string(key)] = locals[key]
           }
           stack.push(Value::from_object(ModuleObject::{ values, captured, }))
           None
