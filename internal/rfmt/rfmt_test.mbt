@@ -85,3 +85,18 @@ test "pretty debug builders" {
     ),
   )
 }
+
+///|
+test "format fixed" {
+  inspect(@rfmt.format_fixed(2.675, 2), content="2.67")
+  inspect(@rfmt.format_fixed(0.5, 0), content="0")
+  inspect(@rfmt.format_fixed(1.5, 0), content="2")
+  inspect(@rfmt.format_fixed(2.5, 0), content="2")
+  inspect(@rfmt.format_fixed(-1.25, 1), content="-1.2")
+  inspect(@rfmt.format_fixed(123.456, 2), content="123.46")
+  inspect(@rfmt.format_fixed(0.0, 3), content="0.000")
+  inspect(@rfmt.format_fixed(9.999, 2), content="10.00")
+  inspect(@rfmt.format_fixed(1.0e20, 1), content="100000000000000000000.0")
+  debug_inspect(@rfmt.format_exp_parts(1234.5, 2), content="(\"1.23\", 3)")
+  debug_inspect(@rfmt.format_exp_parts(0.000123, 0), content="(\"1\", -4)")
+}

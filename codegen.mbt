@@ -55,12 +55,12 @@ priv struct CodeGenerator {
 fn CodeGenerator::new(file : String, source : String) -> CodeGenerator {
   {
     instructions: Instructions::new(file, source),
-    blocks: Map([]),
+    blocks: Map::new(),
     pending_block: [],
     current_line: 0,
     span_stack: [],
-    filter_local_ids: Map([]),
-    test_local_ids: Map([]),
+    filter_local_ids: Map::new(),
+    test_local_ids: Map::new(),
     raw_template_bytes: 0,
   }
 }
@@ -352,11 +352,10 @@ fn CodeGenerator::compile_stmt(self : CodeGenerator, stmt : Stmt) -> Unit {
       self.compile_expr(extends.name)
       self.add_with_span(LoadBlocks, extends.span) |> ignore
     }
-    Include(include) => {
-      self.set_line_from_span(include.span)
-      self.compile_expr(include.name)
-      self.add_with_span(Include(include.ignore_missing), include.span)
-      |> ignore
+    Include(incl) => {
+      self.set_line_from_span(incl.span)
+      self.compile_expr(incl.name)
+      self.add_with_span(Include(incl.ignore_missing), incl.span) |> ignore
     }
     Macro(macro_decl) => self.compile_macro(macro_decl)
     CallBlock(call_block) => self.compile_call_block(call_block)
@@ -797,7 +796,7 @@ fn CodeGenerator::compile_call_args(
   if has_kwargs {
     let mut pending_kwargs = 0
     let mut num_kwargs_batches = 0
-    let collected_kwargs : Map[Value, Value] = Map([])
+    let collected_kwargs : Map[Value, Value] = Map::new()
     for arg in args {
       match arg {
         Kwarg(key, value) =>

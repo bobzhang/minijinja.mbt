@@ -143,6 +143,7 @@ priv enum ObjectImpl {
   Namespace(Map[String, Value])
   MergeSeq(MergeSeqObject)
   Loop(LoopObject)
+  ClosureRef(Closure)
   Custom(&Object)
 }
 
@@ -176,6 +177,7 @@ pub fn DynObject::repr(self : DynObject) -> ObjectRepr {
     Seq(_) | Tuple(_) => Seq
     Map(_) | Kwargs(_) | Namespace(_) | Loop(_) => Map
     MergeSeq(m) => m.repr
+    ClosureRef(_) => Plain
     Custom(o) => o.repr()
   }
 }
@@ -196,6 +198,7 @@ pub fn DynObject::get_value(self : DynObject, key : Value) -> Value? {
         None => None
       }
     MergeSeq(m) => merge_seq_get_value(m, key)
+    ClosureRef(_) => None
     Loop(l) =>
       match key.as_str() {
         Some(s) => l.get_value_by_str(s)
@@ -213,6 +216,7 @@ pub fn DynObject::get_value_by_str(self : DynObject, key : String) -> Value? {
     Map(m) | Kwargs(m) => m.get(Value::from_string(key))
     Namespace(m) => m.get(key)
     Loop(l) => l.get_value_by_str(key)
+    ClosureRef(_) => None
     Custom(o) => o.get_value_by_str(key)
   }
 }
@@ -234,6 +238,7 @@ pub fn DynObject::enumerate(self : DynObject) -> Enumerator {
     }
     MergeSeq(m) => merge_seq_enumerate(m)
     Loop(_) => Str(loop_object_keys)
+    ClosureRef(_) => NonEnumerable
     Custom(o) => o.enumerate()
   }
 }
@@ -247,6 +252,7 @@ pub fn DynObject::enumerator_len(self : DynObject) -> Int? {
     Namespace(m) => Some(m.length())
     MergeSeq(m) => m.total_len
     Loop(_) => Some(loop_object_keys.length())
+    ClosureRef(_) => None
     Custom(o) => o.enumerator_len()
   }
 }
