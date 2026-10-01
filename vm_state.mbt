@@ -112,7 +112,7 @@ fn BlockStack::pop(self : BlockStack) -> Unit {
 fn prepare_blocks(
   blocks : Map[String, Instructions],
 ) -> Map[String, BlockStack] {
-  let rv = Map::new()
+  let rv : Map[String, BlockStack] = Map([])
   for name, instr in blocks {
     rv[name] = BlockStack::new(instr)
   }
@@ -139,11 +139,11 @@ fn State::new(
     current_block: None,
     auto_escape,
     instructions,
-    temps: Map::new(),
+    temps: Map([]),
     blocks,
     loaded_templates: Set([]),
     id: state_id_counter.val,
-    extensions: Map::new(),
+    extensions: Map([]),
     fuel_tracker: match ctx.env.fuel {
       Some(fuel) => Some({ initial: fuel, remaining: fuel, })
       None => None
@@ -233,7 +233,7 @@ fn[T] State::with_execution_state(
     match block_state {
       Keep => ()
       Isolate => {
-        let new_blocks = Map::new()
+        let new_blocks : Map[String, BlockStack] = Map([])
         for entry in checkpoint {
           let (name, count, depth) = entry
           if self.blocks.get(name) is Some(block) {
@@ -253,12 +253,8 @@ fn[T] State::with_execution_state(
       }
     }
   }
-  let rv = f(self) catch {
-    err => {
-      restore()
-      raise err
-    }
-  }
+  errdefer restore()
+  let rv = f(self)
   restore()
   rv
 }
@@ -376,7 +372,7 @@ fn State::make_debug_info(
   pc : Int,
   instructions : Instructions,
 ) -> DebugInfo {
-  let referenced_locals = Map::new()
+  let referenced_locals : Map[String, Value] = Map([])
   for name in instructions.get_referenced_names(pc) {
     if self.lookup(name) is Some(v) {
       referenced_locals[name] = v

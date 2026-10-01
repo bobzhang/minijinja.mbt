@@ -24,7 +24,7 @@ fn MacroObject::prepare_args(
 ) -> (Array[Value], Value?) raise TemplateError {
   let (args, kwargs) = match args.last() {
     Some(Object({ inner: Kwargs(kw), .. })) =>
-      (args[0:args.length() - 1].to_array(), Some(kw))
+      (args[0:args.length() - 1].to_owned(), Some(kw))
     _ => (args, None)
   }
   if args.length() > self.arg_spec.length() {

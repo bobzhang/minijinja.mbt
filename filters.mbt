@@ -77,12 +77,10 @@ fn filter_escape(state : State, v : Value) -> Value raise TemplateError {
   if auto_escape is Custom(_) {
     let old = state.auto_escape
     state.auto_escape = auto_escape
-    state.env().format(v, state, out) catch {
-      err => {
-        state.auto_escape = old
-        raise err
-      }
+    errdefer {
+      state.auto_escape = old
     }
+    state.env().format(v, state, out)
     state.auto_escape = old
   } else {
     write_escaped(out, auto_escape, v)
@@ -347,7 +345,7 @@ fn filter_trim(state : State, args : Array[Value]) -> Value raise TemplateError 
       while end > start && set.contains(cs[end - 1]) {
         end -= 1
       }
-      String::from_array(cs[start:end].to_array())
+      String::from_array(cs[start:end].to_owned())
     }
     None => trim_view(s).to_owned()
   }
@@ -1095,7 +1093,7 @@ fn filter_slice(
       offset += 1
     }
     let end = offset + (slice + 1) * items_per_slice
-    let tmp = items[start:end].to_array()
+    let tmp = items[start:end].to_owned()
     if fill_with is Some(filler) && slice >= slices_with_extra {
       tmp.push(filler)
     }

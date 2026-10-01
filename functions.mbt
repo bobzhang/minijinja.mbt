@@ -60,7 +60,7 @@ fn func_dict(state : State, args : Array[Value]) -> Value raise TemplateError {
   let update_with = a.kwargs()
   let value = a.opt_value()
   a.finish()
-  let rv : Map[Value, Value] = Map::new()
+  let rv : Map[Value, Value] = Map([])
   match value {
     None => ()
     Some(Undefined(_)) => ()
@@ -108,7 +108,7 @@ fn func_namespace(
     _ => None
   }
   a.finish()
-  let ns : Map[String, Value] = Map::new()
+  let ns : Map[String, Value] = Map([])
   if defaults is Some(defaults) {
     match defaults {
       Object(obj) if obj.repr() is Map =>

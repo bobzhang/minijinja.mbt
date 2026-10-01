@@ -221,8 +221,6 @@ pub fn Kwargs::has(Self, String) -> Bool
 pub fn Kwargs::peek(Self, String) -> Value?
 pub fn Kwargs::to_value(Self) -> Value
 
-type LoopObject
-
 pub(all) enum ObjectRepr {
   Plain
   Map
@@ -302,8 +300,6 @@ pub fn Template::render_captured(Self, Value) -> Captured raise TemplateError
 pub fn Template::render_to(Self, Value, (StringView) -> Unit raise) -> State raise TemplateError
 pub fn Template::source(Self) -> String
 pub fn Template::undeclared_variables(Self, nested? : Bool) -> Array[String]
-
-type Token
 
 pub(all) enum UndefinedBehavior {
   Lenient

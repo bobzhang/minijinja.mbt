@@ -26,7 +26,7 @@ pub impl Show for Span with fn output(self, logger) {
 
 ///|
 /// Represents a token in the stream.
-enum Token {
+priv enum Token {
   /// Raw template data.
   TemplateData(String)
   /// Variable block start.

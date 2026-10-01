@@ -21,7 +21,7 @@ priv struct Frame {
 ///|
 fn Frame::new(ctx : Value) -> Frame {
   {
-    locals: Map::new(),
+    locals: Map([]),
     ctx,
     current_loop: None,
     closure: None,
@@ -89,7 +89,7 @@ fn Stack::get_call_args(self : Stack, n : Int?) -> Array[Value] {
     None => self.pop().as_usize().unwrap_or(0)
   }
   let len = self.values.length()
-  self.values[len - n:len].to_array()
+  self.values[len - n:len].to_owned()
 }
 
 ///|
@@ -242,12 +242,8 @@ fn Context::push_frame(
   frame : Frame,
 ) -> Unit raise TemplateError {
   self.stack.push(frame)
-  self.check_depth() catch {
-    err => {
-      self.stack.pop() |> ignore
-      raise err
-    }
-  }
+  errdefer self.stack.pop() |> ignore
+  self.check_depth()
 }
 
 ///|
@@ -320,12 +316,10 @@ fn Context::depth(self : Context) -> Int {
 /// Increase the stack depth.
 fn Context::incr_depth(self : Context, delta : Int) -> Unit raise TemplateError {
   self.outer_stack_depth += delta
-  self.check_depth() catch {
-    err => {
-      self.outer_stack_depth -= delta
-      raise err
-    }
+  errdefer {
+    self.outer_stack_depth -= delta
   }
+  self.check_depth()
 }
 
 ///|

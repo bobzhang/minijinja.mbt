@@ -200,7 +200,7 @@ fn FormatSpec::format_str(
         let chars = text.iter().to_array()
         if p < chars.length() {
           return self.apply_padding(
-            String::from_array(chars[0:p].to_array()),
+            String::from_array(chars[0:p].to_owned()),
             default_align,
           )
         }
@@ -1236,7 +1236,7 @@ fn str_format(
   let (args, kwargs) = match all_args.last() {
     Some(last) =>
       match Kwargs::extract(last) {
-        Some(kw) => (all_args[0:all_args.length() - 1].to_array(), kw)
+        Some(kw) => (all_args[0:all_args.length() - 1].to_owned(), kw)
         None => (all_args, Kwargs::from_pairs([]))
       }
     None => (all_args, Kwargs::from_pairs([]))

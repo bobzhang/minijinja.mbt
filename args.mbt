@@ -19,7 +19,7 @@ pub struct Kwargs {
 ///|
 /// Creates keyword arguments from name/value pairs.
 pub fn Kwargs::from_pairs(pairs : Array[(String, Value)]) -> Kwargs {
-  let values : Map[Value, Value] = Map::new()
+  let values : Map[Value, Value] = Map([])
   for pair in pairs {
     values[Value::from_string(pair.0)] = pair.1
   }
@@ -342,7 +342,7 @@ pub fn Args::kwargs(self : Args) -> Kwargs {
     self.end -= 1
     kw
   } else {
-    { values: Map::new(), used: Set([]), }
+    { values: Map([]), used: Set([]), }
   }
 }
 

@@ -68,7 +68,7 @@ fn JsonParser::parse_value(self : JsonParser) -> Value raise TemplateError {
       if self.sort_keys {
         pairs.sort_by((a, b) => compare_str(a.0, b.0))
       }
-      let m : Map[Value, Value] = Map::new()
+      let m : Map[Value, Value] = Map([])
       for pair in pairs {
         m[Value::from_string(pair.0)] = pair.1
       }
@@ -313,7 +313,7 @@ pub fn Value::from_json(j : Json) -> Value {
     String(s) => Value::from_string(s)
     Array(items) => Value::from_array(items.map(Value::from_json))
     Object(m) => {
-      let rv : Map[Value, Value] = Map::new()
+      let rv : Map[Value, Value] = Map([])
       for k, v in m {
         rv[Value::from_string(k)] = Value::from_json(v)
       }

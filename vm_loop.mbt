@@ -45,7 +45,7 @@ fn AdjacentLoopItemIter::peek_next_item(self : AdjacentLoopItemIter) -> Value {
 
 ///|
 /// The object behind the `loop` variable.
-struct LoopObject {
+priv struct LoopObject {
   len : Int?
   /// The current index, `-1` before the first iteration.
   mut idx : Int

@@ -78,11 +78,11 @@ pub fn Environment::new() -> Environment {
 /// logic for auto escaping configured.
 pub fn Environment::empty() -> Environment {
   {
-    templates: Map::new(),
+    templates: Map([]),
     loader: None,
-    filters: Map::new(),
-    tests: Map::new(),
-    globals: Map::new(),
+    filters: Map([]),
+    tests: Map([]),
+    globals: Map([]),
     maps_shared: false,
     path_join_callback: None,
     unknown_method_callback: None,
@@ -527,7 +527,7 @@ pub fn Environment::empty_state(self : Environment) -> State {
     Context::new(self),
     NoEscape,
     Instructions::new("<unknown>", ""),
-    Map::new(),
+    Map([]),
   )
 }
 
@@ -663,28 +663,28 @@ fn attach_basic_debug_info(
 ) -> TemplateError {
   err.attach_debug_info({
     template_source: Some(source),
-    referenced_locals: Map::new(),
+    referenced_locals: Map([]),
   })
   err
 }
 
 ///|
 let builtin_filters : Map[String, Value] = {
-  let rv = Map::new()
+  let rv : Map[String, Value] = Map([])
   register_builtin_filters(rv)
   rv
 }
 
 ///|
 let builtin_tests : Map[String, Value] = {
-  let rv = Map::new()
+  let rv : Map[String, Value] = Map([])
   register_builtin_tests(rv)
   rv
 }
 
 ///|
 let builtin_globals : Map[String, Value] = {
-  let rv = Map::new()
+  let rv : Map[String, Value] = Map([])
   register_builtin_globals(rv)
   rv
 }

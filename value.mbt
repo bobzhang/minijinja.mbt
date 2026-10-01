@@ -178,7 +178,7 @@ pub fn Value::from_map(m : Map[Value, Value]) -> Value {
 ///|
 /// Creates a map value from string keys.
 pub fn Value::from_str_map(m : Map[String, Value]) -> Value {
-  let rv : Map[Value, Value] = Map::new(capacity=m.length())
+  let rv : Map[Value, Value] = Map([], capacity=m.length())
   for k, v in m {
     rv[Value::from_string(k)] = v
   }
@@ -188,7 +188,7 @@ pub fn Value::from_str_map(m : Map[String, Value]) -> Value {
 ///|
 /// Creates a map value from key/value pairs.
 pub fn Value::from_pairs(pairs : Array[(String, Value)]) -> Value {
-  let rv : Map[Value, Value] = Map::new(capacity=pairs.length())
+  let rv : Map[Value, Value] = Map([], capacity=pairs.length())
   for pair in pairs {
     rv[Value::from_string(pair.0)] = pair.1
   }

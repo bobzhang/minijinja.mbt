@@ -403,7 +403,7 @@ fn value_add(lhs : Value, rhs : Value) -> Value raise TemplateError {
     if depth > merge_seq_max_depth {
       match (lhs.len(), rhs.len()) {
         (Some(a), Some(b)) => {
-          let rv = Array::new(capacity=a + b)
+          let rv = Array(capacity=a + b)
           for v in lhs.try_iter() {
             rv.push(v)
           }
@@ -501,7 +501,7 @@ fn repeat_iterable(n : Value, seq : DynObject) -> Value raise TemplateError {
   }
   let repeated_len = len * n
   if seq.inner is Tuple(items) {
-    let values = Array::new(capacity=repeated_len)
+    let values = Array(capacity=repeated_len)
     for _ in 0..<n {
       for v in items {
         values.push(v)

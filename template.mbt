@@ -188,7 +188,7 @@ pub fn Expression::eval(
     self.env,
     self.instructions,
     ctx,
-    Map::new(),
+    Map([]),
     Output::null(),
     NoEscape,
   )

@@ -78,7 +78,7 @@ test "bench: render" (b : @bench.T) {
 test "bench: loop map items" (b : @bench.T) {
   let env = create_real_env()
   let tmpl = env.get_template("map_items.jinja")
-  let m : Map[@minijinja.Value, @minijinja.Value] = Map::new()
+  let m : Map[@minijinja.Value, @minijinja.Value] = Map([])
   for i in 0..<10000 {
     m[@minijinja.Value::from_int(i)] = @minijinja.Value::from_string(
       "Person\{i}",

@@ -80,17 +80,13 @@ fn eval_macro(
   let old_ctx = state.ctx
   state.ctx = ctx
   let auto_escape = state.auto_escape
-  let rv = state.with_execution_state(
-    instructions,
-    auto_escape,
-    None,
-    Isolate,
-    state => do_eval(state, out, { values: args.copy(), }, pc),
-  ) catch {
-    err => {
+  let rv = {
+    errdefer {
       state.ctx = old_ctx
-      raise err
     }
+    state.with_execution_state(instructions, auto_escape, None, Isolate, state => {
+      do_eval(state, out, { values: args.copy(), }, pc)
+    })
   }
   state.ctx = old_ctx
   rv
@@ -238,7 +234,7 @@ fn do_eval(
           None
         }
         BuildMap(pair_count) => {
-          let map : Map[Value, Value] = Map::new()
+          let map : Map[Value, Value] = Map([])
           stack.reverse_top(pair_count * 2)
           for _ in 0..<pair_count {
             let key = stack.pop()
@@ -249,7 +245,7 @@ fn do_eval(
           None
         }
         BuildKwargs(pair_count) => {
-          let map : Map[Value, Value] = Map::new()
+          let map : Map[Value, Value] = Map([])
           stack.reverse_top(pair_count * 2)
           for _ in 0..<pair_count {
             let key = stack.pop()
@@ -570,7 +566,7 @@ fn do_eval(
           let rv = args[0].call_method(
             state,
             name,
-            args[1:args.length()].to_array(),
+            args[1:args.length()].to_owned(),
           )
           stack.drop_top(args.length())
           stack.push(rv)
@@ -578,7 +574,7 @@ fn do_eval(
         }
         CallObject(arg_count) => {
           let args = stack.get_call_args(arg_count)
-          let rv = args[0].call(state, args[1:args.length()].to_array())
+          let rv = args[0].call(state, args[1:args.length()].to_owned())
           stack.drop_top(args.length())
           stack.push(rv)
           None
@@ -638,7 +634,7 @@ fn do_eval(
         ExportLocals => {
           let captured = stack.pop()
           let locals = state.ctx.current_locals()
-          let values : Map[Value, Value] = Map::new()
+          let values : Map[Value, Value] = Map([])
           // locals are a BTreeMap in MiniJinja, so exports are sorted
           for key in sorted_keys(locals) {
             values[Value::from_string(key)] = locals[key]
@@ -661,7 +657,7 @@ fn do_eval(
           // The first enclosed value creates a state-owned closure shared by
           // all macros declared in this frame.
           if state.ctx.closure() is None {
-            state.ctx.reset_closure(Some({ values: Map::new(), }))
+            state.ctx.reset_closure(Some({ values: Map([]), }))
           }
           state.ctx.enclose(name)
           None
@@ -732,7 +728,7 @@ fn merge_kwargs(
   state : State,
   values : Array[Value],
 ) -> Value raise TemplateError {
-  let rv : Map[Value, Value] = Map::new()
+  let rv : Map[Value, Value] = Map([])
   for value in values {
     state.undefined_behavior().assert_iterable(value)
     let iter = match value {
@@ -846,11 +842,9 @@ fn perform_super(
   if !block_stack.push() {
     raise TemplateError::new(InvalidOperation, "no parent block exists")
   }
-  state.ctx.push_frame(Frame::default()) catch {
-    err => {
-      block_stack.pop()
-      raise err
-    }
+  {
+    errdefer block_stack.pop()
+    state.ctx.push_frame(Frame::default())
   }
   if capture {
     out.begin_capture(Capture)

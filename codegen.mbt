@@ -55,12 +55,12 @@ priv struct CodeGenerator {
 fn CodeGenerator::new(file : String, source : String) -> CodeGenerator {
   {
     instructions: Instructions::new(file, source),
-    blocks: Map::new(),
+    blocks: Map([]),
     pending_block: [],
     current_line: 0,
     span_stack: [],
-    filter_local_ids: Map::new(),
-    test_local_ids: Map::new(),
+    filter_local_ids: Map([]),
+    test_local_ids: Map([]),
     raw_template_bytes: 0,
   }
 }
@@ -796,7 +796,7 @@ fn CodeGenerator::compile_call_args(
   if has_kwargs {
     let mut pending_kwargs = 0
     let mut num_kwargs_batches = 0
-    let collected_kwargs : Map[Value, Value] = Map::new()
+    let collected_kwargs : Map[Value, Value] = Map([])
     for arg in args {
       match arg {
         Kwarg(key, value) =>

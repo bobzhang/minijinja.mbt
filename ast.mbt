@@ -396,7 +396,7 @@ fn Expr::as_const(self : Expr) -> Value? {
     List(l) => const_values(l.items).map(Value::from_array)
     Tuple(t) => const_values(t.items).map(Value::from_tuple)
     Map(m) => {
-      let rv : Map[Value, Value] = Map::new()
+      let rv : Map[Value, Value] = Map([])
       for i, key in m.keys {
         match (key, m.values[i]) {
           (Const(k), Const(v)) => rv[k.value] = v.value
