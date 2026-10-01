@@ -156,6 +156,23 @@ three.
 12. `format` filter, `tojson`/`urlencode`, remaining snapshots, docs, README.
 13. Optional: `minijinja-contrib`, a CLI built on `moonbitlang/async`.
 
+## Notes adopted from the Codex review (`docs/codex-advice-plan.md`)
+
+* Object identity uses explicit ids (not `physical_equal`, which is only an
+  optimization hint) for `sameas` and equality fast paths.
+* `.snap` comparison applies insta's normalization (strip leading CR/LF and
+  trailing whitespace, CRLF → LF) to both sides; exact-output unit tests
+  cover trailing newlines and whitespace control.
+* JSON fixtures are decoded by a number-preserving JSON → `Value` parser
+  (`4` stays an integer and `4.0` a float), unlike `@json`.
+* The `format` filter keeps upstream quirks: padding counts UTF-8 bytes and
+  `%c` pads to width one. `round` uses half-even decimal rounding.
+* Sorting is stable and reverses the comparator, not the result.
+* `Value` Display of floats appends `.0` (`50.0`, `-0.0`); containers use the
+  Debug representation (exponent form for large or small magnitudes).
+* Deviation: span offsets are UTF-16 code units (MoonBit string indices)
+  instead of UTF-8 bytes; lines and columns match Rust exactly.
+
 ## Risks
 
 * Float formatting parity (Rust Display and Debug).  Mitigated by a tested
