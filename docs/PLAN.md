@@ -148,7 +148,7 @@ three.
   the ported upstream unit tests (`*_test.mbt`, ~250 tests) on the native,
   wasm, wasm-gc and js backends (the corpus runners need file IO and run on
   native and wasm only).
-* Two Codex review rounds (`docs/codex-review-*.md`) were addressed.
+* Three Codex review rounds (`docs/codex-review-*.md`) were addressed.
 * `fuel` is ported, as are typed per-render `State` extensions
   (`ExtensionKey[T]`).
 * `minijinja-contrib` is ported in `contrib/` (pycompat, filters, globals,
