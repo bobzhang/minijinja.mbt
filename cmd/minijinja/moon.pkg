@@ -1,0 +1,14 @@
+import {
+  "bobzhang/minijinja/cli",
+  "moonbitlang/async",
+  "moonbitlang/async/stdio",
+  "moonbitlang/core/env",
+}
+
+supported_targets = "native+wasm"
+
+pkgtype(kind: "executable")
+
+options(
+  targets: { "exit_native.mbt": [ "native" ], "exit_wasm.mbt": [ "wasm" ] },
+)

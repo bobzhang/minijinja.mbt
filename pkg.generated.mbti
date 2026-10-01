@@ -13,6 +13,10 @@ pub fn builtin_function(String) -> Value?
 
 pub fn builtin_test(String) -> Value?
 
+pub fn debug_ast(String, String) -> String raise TemplateError
+
+pub fn debug_tokens(String, trim_blocks? : Bool, lstrip_blocks? : Bool) -> Array[String] raise TemplateError
+
 pub fn default_auto_escape_callback(String) -> AutoEscape
 
 pub fn format_string(FormatStyle, String, Array[Value]) -> String raise TemplateError
@@ -293,6 +297,7 @@ pub fn SyntaxConfig::variable_delimiters(Self) -> (String, String)
 pub struct Template {
   // private fields
 }
+pub fn Template::debug_instructions(Self) -> Array[(String, Array[String])]
 pub fn Template::name(Self) -> String
 pub fn Template::new_state(Self) -> State
 pub fn Template::render(Self, Value) -> String raise TemplateError

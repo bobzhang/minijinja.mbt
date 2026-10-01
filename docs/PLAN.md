@@ -12,7 +12,7 @@ the CLI and the language bindings come later, if at all.
   loop controls, custom syntax, line statements, auto escaping, undefined
   behaviors, error reporting with spans and debug info.
 * The core library is pure MoonBit with no IO, and builds on every backend
-  (`native`, `wasm-gc`, `js`).  IO happens only in tests and a future CLI, through
+  (`native`, `wasm-gc`, `js`).  IO happens only in tests and the CLI, through
   `moonbitlang/async` (which now supports wasm).
 * Upstream's snapshot corpus (`tests/inputs/*.txt` and `tests/snapshots/*.snap`)
   is the conformance oracle.  It is vendored in `testdata/`.
@@ -52,6 +52,9 @@ bobzhang/minijinja            (root) Value, Object, Kwargs, Error, Environment,
                               functions, lexer, parser, AST, codegen, VM
 bobzhang/minijinja/internal/rfmt   Rust-compatible f64 Display/Debug formatting
 bobzhang/minijinja/tests      snapshot conformance runner (async fs, native/wasm)
+bobzhang/minijinja/contrib    minijinja-contrib
+bobzhang/minijinja/cli        minijinja-cli logic (`@cli.run`, async, native/wasm)
+bobzhang/minijinja/cmd/minijinja   the minijinja-cli executable
 ```
 
 Files in the root package mirror the upstream modules (`lexer.mbt`,
@@ -151,7 +154,15 @@ three.
 * `minijinja-contrib` is ported in `contrib/` (pycompat, filters, globals,
   random; without the `datetime` feature which depends on `jiff`).  All
   upstream contrib tests pass on every backend.
-* Not ported: the CLI.
+* `minijinja-cli` is ported as `cmd/minijinja` (logic in the `cli`
+  package, native and wasm only, I/O through `moonbitlang/async`) with a
+  hand written clap-compatible argument parser.  The JSON based upstream
+  CLI tests (`tests/test_basic.rs`) pass.  `--dump` uses the small
+  `debug_tokens` / `debug_ast` / `Template::debug_instructions` helpers
+  (upstream's `unstable_machinery`).  Not ported: the yaml, toml, cbor, ini
+  and json5 data formats (json and querystring are supported), the TOML
+  config file (`--config-file`, `--print-config`), `--repl` and
+  `--generate-completion`.
 * Benchmarks mirroring upstream live in `bench/`
   (`moon bench --target native --release bench`).
 
@@ -171,7 +182,7 @@ three.
 11. Error debug-info rendering, the rest of the error snapshots, custom syntax,
     line statements.
 12. `format` filter, `tojson`/`urlencode`, remaining snapshots, docs, README.
-13. Optional: `minijinja-contrib`, a CLI built on `moonbitlang/async`.
+13. Optional: `minijinja-contrib`, a CLI built on `moonbitlang/async`.  ✅
 
 ## Notes adopted from the Codex review (`docs/codex-advice-plan.md`)
 
