@@ -36,6 +36,7 @@ pub struct Environment {
   priv mut formatter : FormatterFunc
   priv mut formatter_is_default : Bool
   priv mut debug : Bool
+  priv mut fuel : Int64?
   priv mut recursion_limit : Int
   priv mut syntax_config : SyntaxConfig
   priv mut ws_config : WhitespaceConfig
@@ -84,6 +85,7 @@ pub fn Environment::empty() -> Environment {
     formatter: default_formatter,
     formatter_is_default: true,
     debug: true,
+    fuel: None,
     recursion_limit: max_vm_recursion,
     syntax_config: SyntaxConfig::default(),
     ws_config: WhitespaceConfig::default(),
@@ -350,6 +352,23 @@ pub fn Environment::set_debug(self : Environment, enabled : Bool) -> Unit {
 /// Returns the current value of the debug flag.
 pub fn Environment::debug(self : Environment) -> Bool {
   self.debug
+}
+
+///|
+/// Sets the optional fuel of the engine.
+///
+/// When MiniJinja is compiled with fuel support (always the case in this
+/// port), the engine will consume fuel on every instruction it executes.
+/// Once the engine runs out of fuel, rendering fails with an `OutOfFuel`
+/// error.  This can be used to limit the amount of work a template can do.
+pub fn Environment::set_fuel(self : Environment, fuel : Int64?) -> Unit {
+  self.fuel = fuel
+}
+
+///|
+/// Returns the configured fuel.
+pub fn Environment::fuel(self : Environment) -> Int64? {
+  self.fuel
 }
 
 ///|

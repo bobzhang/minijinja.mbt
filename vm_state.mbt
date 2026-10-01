@@ -15,6 +15,65 @@ pub struct State {
   priv mut blocks : Map[String, BlockStack]
   priv mut loaded_templates : Set[String]
   priv id : Int
+  priv fuel_tracker : FuelTracker?
+}
+
+///|
+priv struct FuelTracker {
+  initial : Int64
+  mut remaining : Int64
+}
+
+///|
+fn fuel_for_instruction(instr : Instruction) -> Int64 {
+  match instr {
+    BeginCapture(_)
+    | PushLoop(_)
+    | PushDidNotIterate
+    | PushWith
+    | PopFrame
+    | PopLoopFrame
+    | DupTop
+    | DiscardTop
+    | PushAutoEscape
+    | PopAutoEscape
+    | ExportLocals
+    | LoadBlocks
+    | BuildMacro(_, _, _)
+    | Return => 0L
+    _ => 1L
+  }
+}
+
+///|
+fn FuelTracker::track(
+  self : FuelTracker,
+  instr : Instruction,
+) -> Unit raise TemplateError {
+  let fuel_to_consume = fuel_for_instruction(instr)
+  if fuel_to_consume != 0L {
+    self.remaining -= fuel_to_consume
+    if self.remaining <= 0L {
+      raise TemplateError::from_kind(OutOfFuel)
+    }
+  }
+}
+
+///|
+/// Returns the amount of fuel consumed and remaining (if fuel is enabled).
+pub fn State::fuel_levels(self : State) -> (Int64, Int64)? {
+  match self.fuel_tracker {
+    Some(t) => {
+      let remaining = if t.remaining < 0L { 0L } else { t.remaining }
+      let consumed = if t.initial > remaining {
+        t.initial - remaining
+      } else {
+        0L
+      }
+      Some((consumed, remaining))
+    }
+    None => None
+  }
 }
 
 ///|
@@ -83,6 +142,10 @@ fn State::new(
     blocks,
     loaded_templates: Set([]),
     id: state_id_counter.val,
+    fuel_tracker: match ctx.env.fuel {
+      Some(fuel) => Some({ initial: fuel, remaining: fuel, })
+      None => None
+    },
   }
 }
 

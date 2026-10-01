@@ -115,6 +115,7 @@ pub fn Environment::compile_expression(Self, String) -> Expression raise Templat
 pub fn Environment::debug(Self) -> Bool
 pub fn Environment::empty() -> Self
 pub fn Environment::empty_state(Self) -> State
+pub fn Environment::fuel(Self) -> Int64?
 pub fn Environment::get_template(Self, String) -> Template raise TemplateError
 pub fn Environment::globals(Self) -> Array[(String, Value)]
 pub fn Environment::keep_trailing_newline(Self) -> Bool
@@ -130,6 +131,7 @@ pub fn Environment::render_str(Self, String, Value) -> String raise TemplateErro
 pub fn Environment::set_auto_escape_callback(Self, (String) -> AutoEscape) -> Unit
 pub fn Environment::set_debug(Self, Bool) -> Unit
 pub fn Environment::set_formatter(Self, (Output, State, Value) -> Unit raise TemplateError) -> Unit
+pub fn Environment::set_fuel(Self, Int64?) -> Unit
 pub fn Environment::set_keep_trailing_newline(Self, Bool) -> Unit
 pub fn Environment::set_loader(Self, (String) -> String? raise TemplateError) -> Unit
 pub fn Environment::set_lstrip_blocks(Self, Bool) -> Unit
@@ -239,6 +241,7 @@ pub fn State::current_block(Self) -> String?
 pub fn State::env(Self) -> Environment
 pub fn State::exports(Self) -> Array[String]
 pub fn State::format(Self, Value) -> String raise TemplateError
+pub fn State::fuel_levels(Self) -> (Int64, Int64)?
 pub fn State::get_temp(Self, String) -> Value?
 pub fn State::get_template(Self, String) -> Template raise TemplateError
 pub fn State::known_variables(Self) -> Array[String]

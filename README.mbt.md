@@ -86,7 +86,10 @@ test "custom filter" {
     @minijinja.Value::from_string(Array::make(times, value).join(sep))
   })
   inspect(
-    env.render_str("{{ 'ab'|repeat }} {{ 'x'|repeat(3, sep='-') }}", @minijinja.Value::none()),
+    env.render_str(
+      "{{ 'ab'|repeat }} {{ 'x'|repeat(3, sep='-') }}",
+      @minijinja.Value::none(),
+    ),
     content="abab x-x-x",
   )
 }
@@ -104,7 +107,7 @@ struct Point {
 }
 
 ///|
-impl @minijinja.Object for Point with get_value(self, key) {
+impl @minijinja.Object for Point with fn get_value(self, key) {
   match key.as_str() {
     Some("x") => Some(@minijinja.Value::from_int(self.x))
     Some("y") => Some(@minijinja.Value::from_int(self.y))
@@ -113,7 +116,7 @@ impl @minijinja.Object for Point with get_value(self, key) {
 }
 
 ///|
-impl @minijinja.Object for Point with enumerate(_self) {
+impl @minijinja.Object for Point with fn enumerate(_self) {
   Str(["x", "y"])
 }
 
@@ -121,7 +124,7 @@ impl @minijinja.Object for Point with enumerate(_self) {
 test "objects" {
   let env = @minijinja.Environment::new()
   let ctx = @minijinja.Value::from_pairs([
-    ("p", @minijinja.Value::from_object(Point::{ x: 1, y: 2 })),
+    ("p", @minijinja.Value::from_object(Point::{ x: 1, y: 2, })),
   ])
   inspect(
     env.render_str("{{ p.x }},{{ p.y }} {{ p|list }}", ctx),

@@ -149,6 +149,9 @@ fn do_eval(
     }
     // the next program counter (`None` means `pc + 1`)
     let jump : Int? = try {
+      if state.fuel_tracker is Some(tracker) {
+        tracker.track(instr)
+      }
       match instr {
         Swap => {
           let a = stack.pop()
