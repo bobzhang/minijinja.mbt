@@ -138,6 +138,19 @@ three.
 3. Unit tests port the targeted Rust tests (`test_value.rs`, `test_filters.rs`,
    `test_environment.rs`, `test_macros.rs`, …) as MoonBit `test` blocks.
 
+## Status
+
+* Milestones 1–12 are done.  All upstream lexer (22), parser (40),
+  compiler (4), template (160) and block fragment (6) snapshots pass, as do
+  the ported upstream unit tests (`*_test.mbt`, ~250 tests) on the native,
+  wasm, wasm-gc and js backends (the corpus runners need file IO and run on
+  native and wasm only).
+* Two Codex review rounds (`docs/codex-review-*.md`) were addressed.
+* `fuel` is ported; `minijinja-contrib` is being ported in `contrib/`
+  (without the `datetime` feature which depends on `jiff`).
+* Benchmarks mirroring upstream live in `bench/`
+  (`moon bench --target native --release bench`).
+
 ## Milestones (one or more commits each)
 
 1. Skeleton, vendored fixtures, plan.  ✅
