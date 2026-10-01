@@ -381,6 +381,12 @@ fn int_binop(
 ///|
 /// Adds two values.
 fn value_add(lhs : Value, rhs : Value) -> Value raise TemplateError {
+  // fast path for the most common case
+  if small_int(lhs) is Some(a) &&
+    small_int(rhs) is Some(b) &&
+    checked_i64_add(a, b) is Some(r) {
+    return I64(r)
+  }
   if lhs.is_tuple() || rhs.is_tuple() {
     if lhs.is_tuple() && rhs.is_tuple() {
       let values = lhs.try_iter().to_array()
@@ -421,11 +427,22 @@ fn value_add(lhs : Value, rhs : Value) -> Value raise TemplateError {
 
 ///|
 fn value_sub(lhs : Value, rhs : Value) -> Value raise TemplateError {
+  if small_int(lhs) is Some(a) &&
+    small_int(rhs) is Some(b) &&
+    checked_i64_sub(a, b) is Some(r) {
+    return I64(r)
+  }
   int_binop("-", lhs, rhs, (a, b) => checked_i128(a - b), checked_i64_sub)
 }
 
 ///|
 fn value_mul(lhs : Value, rhs : Value) -> Value raise TemplateError {
+  if small_int(lhs) is Some(a) &&
+    small_int(rhs) is Some(b) &&
+    small_mul_safe(a) &&
+    small_mul_safe(b) {
+    return I64(a * b)
+  }
   let str_and_n = match (lhs.as_str(), rhs.as_str()) {
     (Some(s), _) => Some((s, rhs))
     (_, Some(s)) => Some((s, lhs))
@@ -1091,4 +1108,15 @@ fn utf8_len(s : String) -> Int {
     }
   }
   n
+}
+
+///|
+/// Returns the value as `Int64` if it is a (signed or unsigned) 64 bit
+/// integer that fits.  Used by arithmetic fast paths.
+fn small_int(v : Value) -> Int64? {
+  match v {
+    I64(a) => Some(a)
+    U64(a) if a <= 0x7FFFFFFFFFFFFFFFUL => Some(a.reinterpret_as_int64())
+    _ => None
+  }
 }

@@ -125,6 +125,8 @@ fn cmp_uncoercible_numbers(left : Value, right : Value) -> Int {
 ///|
 pub impl Eq for Value with fn equal(self, other) {
   match (self, other) {
+    (I64(a), I64(b)) => a == b
+    (U64(a), U64(b)) => a == b
     (NoneValue, NoneValue) => true
     (Undefined(_), Undefined(_)) => true
     (Str(a, _), Str(b, _)) => a == b
@@ -238,6 +240,9 @@ fn has_default_render(a : DynObject) -> Bool {
 ///|
 /// Compares two values like MiniJinja's `Ord` implementation.
 pub fn Value::cmp(self : Value, other : Value) -> Int {
+  if small_int(self) is Some(a) && small_int(other) is Some(b) {
+    return compare_int64(a, b)
+  }
   let kind_ordering = self.kind().compare(other.kind())
   if kind_ordering != 0 {
     return if kind_ordering < 0 { -1 } else { 1 }
