@@ -1,0 +1,29 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/minijinja/internal/unicode"
+
+// Values
+pub fn case_fold(StringView) -> String
+
+pub fn char_to_lower(Char) -> String
+
+pub fn char_to_upper(Char) -> String
+
+pub fn is_lowercase(Char) -> Bool
+
+pub fn is_uppercase(Char) -> Bool
+
+pub fn is_xid_continue(Char) -> Bool
+
+pub fn is_xid_start(Char) -> Bool
+
+pub fn to_lower(StringView) -> String
+
+pub fn to_upper(StringView) -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

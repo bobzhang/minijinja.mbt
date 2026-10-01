@@ -1,0 +1,386 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/minijinja"
+
+import {
+  "moonbitlang/core/bigint",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn default_auto_escape_callback(String) -> AutoEscape
+
+pub fn format_string(FormatStyle, String, Array[Value]) -> String raise TemplateError
+
+pub fn html_escape(String) -> String
+
+pub fn merge_maps(Array[Value]) -> Value
+
+// Errors
+pub suberror TemplateError {
+  TemplateError(ErrorData)
+}
+pub fn TemplateError::debug_string(Self, pretty? : Bool) -> String
+pub fn TemplateError::detail(Self) -> String?
+pub fn TemplateError::display_debug_info(Self) -> String
+pub fn TemplateError::display_with_debug_info(Self) -> String
+pub fn TemplateError::from_kind(ErrorKind) -> Self
+pub fn TemplateError::kind(Self) -> ErrorKind
+pub fn TemplateError::line(Self) -> Int?
+pub fn TemplateError::name(Self) -> String?
+pub fn TemplateError::new(ErrorKind, String) -> Self
+pub fn TemplateError::range(Self) -> (Int, Int)?
+pub fn TemplateError::source(Self) -> Self?
+pub fn TemplateError::span(Self) -> Span?
+pub fn TemplateError::template_source(Self) -> String?
+pub fn TemplateError::to_string(Self) -> String
+pub fn TemplateError::with_source(Self, Self) -> Self
+pub impl Show for TemplateError
+
+// Types and methods
+pub struct Args {
+  // private fields
+}
+pub fn Args::bool(Self) -> Bool raise TemplateError
+pub fn Args::f64(Self) -> Double raise TemplateError
+pub fn Args::finish(Self) -> Unit raise TemplateError
+pub fn Args::has_more(Self) -> Bool
+pub fn Args::i32(Self) -> Int raise TemplateError
+pub fn Args::i64(Self) -> Int64 raise TemplateError
+pub fn Args::kwargs(Self) -> Kwargs
+pub fn Args::new(State, Array[Value]) -> Self
+pub fn Args::opt_bool(Self) -> Bool? raise TemplateError
+pub fn Args::opt_i32(Self) -> Int? raise TemplateError
+pub fn Args::opt_i64(Self) -> Int64? raise TemplateError
+pub fn Args::opt_str(Self) -> String? raise TemplateError
+pub fn Args::opt_string(Self) -> String? raise TemplateError
+pub fn Args::opt_string_input(Self) -> StringInput? raise TemplateError
+pub fn Args::opt_usize(Self) -> Int? raise TemplateError
+pub fn Args::opt_value(Self) -> Value? raise TemplateError
+pub fn Args::rest(Self) -> Array[Value] raise TemplateError
+pub fn Args::rest_with_kwargs(Self) -> Array[Value]
+pub fn Args::str(Self) -> String raise TemplateError
+pub fn Args::string(Self) -> String raise TemplateError
+pub fn Args::string_input(Self) -> StringInput raise TemplateError
+pub fn Args::usize(Self) -> Int raise TemplateError
+pub fn Args::value(Self) -> Value raise TemplateError
+pub fn Args::value_or_kwargs(Self) -> Value raise TemplateError
+
+pub(all) enum AutoEscape {
+  NoEscape
+  Html
+  Json
+  Custom(String)
+} derive(Eq)
+
+pub struct Captured {
+  output : String
+  state : State
+}
+
+pub struct DynObject {
+  // private fields
+}
+pub fn DynObject::call(Self, State, Array[Value]) -> Value raise TemplateError
+pub fn DynObject::call_method(Self, State, String, Array[Value]) -> Value raise TemplateError
+pub fn DynObject::enumerate(Self) -> Enumerator
+pub fn DynObject::enumerator_len(Self) -> Int?
+pub fn DynObject::get_value(Self, Value) -> Value?
+pub fn DynObject::get_value_by_str(Self, String) -> Value?
+pub fn DynObject::is_same_object(Self, Self) -> Bool
+pub fn DynObject::is_true(Self) -> Bool
+pub fn DynObject::repr(Self) -> ObjectRepr
+pub fn DynObject::try_iter(Self) -> Iter[Value]?
+pub fn DynObject::try_iter_pairs(Self) -> Iter[(Value, Value)]?
+
+pub(all) enum Enumerator {
+  NonEnumerable
+  Empty
+  Str(Array[String])
+  Iter(Iter[Value])
+  KeyValueIter(Iter[(Value, Value)])
+  Seq(Int)
+  Values(Array[Value])
+}
+
+pub struct Environment {
+  // private fields
+}
+pub fn Environment::add_filter(Self, String, (State, Array[Value]) -> Value raise TemplateError) -> Unit
+pub fn Environment::add_function(Self, String, (State, Array[Value]) -> Value raise TemplateError) -> Unit
+pub fn Environment::add_global(Self, String, Value) -> Unit
+pub fn Environment::add_template(Self, String, String) -> Unit raise TemplateError
+pub fn Environment::add_test(Self, String, (State, Array[Value]) -> Value raise TemplateError) -> Unit
+pub fn Environment::clear_templates(Self) -> Unit
+pub fn Environment::compile_expression(Self, String) -> Expression raise TemplateError
+pub fn Environment::debug(Self) -> Bool
+pub fn Environment::empty() -> Self
+pub fn Environment::empty_state(Self) -> State
+pub fn Environment::get_template(Self, String) -> Template raise TemplateError
+pub fn Environment::globals(Self) -> Array[(String, Value)]
+pub fn Environment::keep_trailing_newline(Self) -> Bool
+pub fn Environment::lstrip_blocks(Self) -> Bool
+pub fn Environment::new() -> Self
+pub fn Environment::recursion_limit(Self) -> Int
+pub fn Environment::remove_filter(Self, String) -> Unit
+pub fn Environment::remove_global(Self, String) -> Unit
+pub fn Environment::remove_template(Self, String) -> Unit
+pub fn Environment::remove_test(Self, String) -> Unit
+pub fn Environment::render_named_str(Self, String, String, Value) -> String raise TemplateError
+pub fn Environment::render_str(Self, String, Value) -> String raise TemplateError
+pub fn Environment::set_auto_escape_callback(Self, (String) -> AutoEscape) -> Unit
+pub fn Environment::set_debug(Self, Bool) -> Unit
+pub fn Environment::set_formatter(Self, (Output, State, Value) -> Unit raise TemplateError) -> Unit
+pub fn Environment::set_keep_trailing_newline(Self, Bool) -> Unit
+pub fn Environment::set_loader(Self, (String) -> String? raise TemplateError) -> Unit
+pub fn Environment::set_lstrip_blocks(Self, Bool) -> Unit
+pub fn Environment::set_path_join_callback(Self, (String, String) -> String) -> Unit
+pub fn Environment::set_recursion_limit(Self, Int) -> Unit
+pub fn Environment::set_syntax(Self, SyntaxConfig) -> Unit
+pub fn Environment::set_trim_blocks(Self, Bool) -> Unit
+pub fn Environment::set_undefined_behavior(Self, UndefinedBehavior) -> Unit
+pub fn Environment::set_unknown_method_callback(Self, (State, Value, String, Array[Value]) -> Value raise TemplateError) -> Unit
+pub fn Environment::syntax(Self) -> SyntaxConfig
+pub fn Environment::template_from_named_str(Self, String, String) -> Template raise TemplateError
+pub fn Environment::template_from_str(Self, String) -> Template raise TemplateError
+pub fn Environment::template_names(Self) -> Array[String]
+pub fn Environment::trim_blocks(Self) -> Bool
+pub fn Environment::undefined_behavior(Self) -> UndefinedBehavior
+
+type ErrorData
+
+pub(all) enum ErrorKind {
+  NonPrimitive
+  NonKey
+  InvalidOperation
+  SyntaxError
+  TemplateNotFound
+  TooManyArguments
+  MissingArgument
+  UnknownFilter
+  UnknownTest
+  UnknownFunction
+  UnknownMethod
+  BadEscape
+  UndefinedError
+  BadSerialization
+  CannotDeserialize
+  BadInclude
+  EvalBlock
+  CannotUnpack
+  WriteFailure
+  OutOfFuel
+  InvalidDelimiter
+  UnknownBlock
+} derive(Eq, Hash, @debug.Debug)
+pub fn ErrorKind::description(Self) -> String
+pub fn ErrorKind::name(Self) -> String
+pub impl Show for ErrorKind
+
+pub struct Expression {
+  // private fields
+}
+pub fn Expression::eval(Self, Value) -> Value raise TemplateError
+pub fn Expression::undeclared_variables(Self, Bool) -> Array[String]
+
+pub(all) enum FormatStyle {
+  Printf
+  StrFormat
+} derive(Eq)
+
+pub struct Kwargs {
+  // private fields
+}
+pub fn Kwargs::args(Self) -> Array[String]
+pub fn Kwargs::assert_all_used(Self) -> Unit raise TemplateError
+pub fn Kwargs::from_pairs(Array[(String, Value)]) -> Self
+pub fn Kwargs::get(Self, String) -> Value raise TemplateError
+pub fn Kwargs::get_bool(Self, String) -> Bool? raise TemplateError
+pub fn Kwargs::get_int(Self, String) -> Int64? raise TemplateError
+pub fn Kwargs::get_opt(Self, String) -> Value? raise TemplateError
+pub fn Kwargs::get_str(Self, String) -> String? raise TemplateError
+pub fn Kwargs::get_usize(Self, String) -> Int? raise TemplateError
+pub fn Kwargs::has(Self, String) -> Bool
+pub fn Kwargs::peek(Self, String) -> Value?
+pub fn Kwargs::to_value(Self) -> Value
+
+type LoopObject
+
+pub(all) enum ObjectRepr {
+  Plain
+  Map
+  Seq
+  Iterable
+} derive(Compare, Eq, @debug.Debug)
+
+pub struct Output {
+  // private fields
+}
+pub fn Output::write_char(Self, Char) -> Unit
+pub fn Output::write_str(Self, StringView) -> Unit
+
+pub(all) struct Span {
+  start_line : Int
+  start_col : Int
+  start_offset : Int
+  end_line : Int
+  end_col : Int
+  end_offset : Int
+} derive(Default, Eq)
+pub fn Span::to_string(Self) -> String
+pub impl Show for Span
+
+pub struct State {
+  // private fields
+}
+pub fn State::apply_filter(Self, String, Array[Value]) -> Value raise TemplateError
+pub fn State::auto_escape(Self) -> AutoEscape
+pub fn State::call_macro(Self, String, Array[Value]) -> String raise TemplateError
+pub fn State::current_block(Self) -> String?
+pub fn State::env(Self) -> Environment
+pub fn State::exports(Self) -> Array[String]
+pub fn State::format(Self, Value) -> String raise TemplateError
+pub fn State::get_temp(Self, String) -> Value?
+pub fn State::get_template(Self, String) -> Template raise TemplateError
+pub fn State::known_variables(Self) -> Array[String]
+pub fn State::lookup(Self, String) -> Value?
+pub fn State::name(Self) -> String
+pub fn State::perform_test(Self, String, Array[Value]) -> Bool raise TemplateError
+pub fn State::render_block(Self, String) -> String raise TemplateError
+pub fn State::set_temp(Self, String, Value) -> Value?
+pub fn State::undefined_behavior(Self) -> UndefinedBehavior
+
+pub struct StringInput {
+  // private fields
+}
+pub fn StringInput::as_str(Self) -> String
+pub fn StringInput::format(Self, State) -> String raise TemplateError
+pub fn StringInput::is_safe(Self) -> Bool
+pub fn StringInput::new(State, Value) -> Self raise TemplateError
+pub fn StringInput::preserve_safety(Self, String) -> Value
+
+pub struct SyntaxConfig {
+  // private fields
+}
+pub fn SyntaxConfig::block_delimiters(Self) -> (String, String)
+pub fn SyntaxConfig::comment_delimiters(Self) -> (String, String)
+pub fn SyntaxConfig::default() -> Self
+pub fn SyntaxConfig::line_comment_prefix(Self) -> String?
+pub fn SyntaxConfig::line_statement_prefix(Self) -> String?
+pub fn SyntaxConfig::new(block_delimiters? : (String, String), variable_delimiters? : (String, String), comment_delimiters? : (String, String), line_statement_prefix? : String, line_comment_prefix? : String) -> Self raise TemplateError
+pub fn SyntaxConfig::variable_delimiters(Self) -> (String, String)
+
+pub struct Template {
+  // private fields
+}
+pub fn Template::name(Self) -> String
+pub fn Template::new_state(Self) -> State
+pub fn Template::render(Self, Value) -> String raise TemplateError
+pub fn Template::render_captured(Self, Value) -> Captured raise TemplateError
+pub fn Template::source(Self) -> String
+pub fn Template::undeclared_variables(Self, Bool) -> Array[String]
+
+type Token
+
+pub(all) enum UndefinedBehavior {
+  Lenient
+  Chainable
+  SemiStrict
+  Strict
+} derive(Eq)
+
+type Value
+pub fn Value::as_bytes(Self) -> Bytes?
+pub fn Value::as_f64(Self) -> Double?
+pub fn Value::as_i64(Self) -> Int64?
+pub fn Value::as_object(Self) -> DynObject?
+pub fn Value::as_str(Self) -> String?
+pub fn Value::as_usize(Self) -> Int?
+pub fn Value::call(Self, State, Array[Self]) -> Self raise TemplateError
+pub fn Value::call_method(Self, State, String, Array[Self]) -> Self raise TemplateError
+pub fn Value::cmp(Self, Self) -> Int
+pub fn Value::debug_string(Self, pretty? : Bool) -> String
+pub fn Value::from_array(Array[Self]) -> Self
+pub fn Value::from_bigint(@bigint.BigInt) -> Self
+pub fn Value::from_bool(Bool) -> Self
+pub fn Value::from_bytes(Bytes) -> Self
+pub fn Value::from_char(Char) -> Self
+pub fn Value::from_double(Double) -> Self
+pub fn Value::from_dyn_object(DynObject) -> Self
+pub fn Value::from_error(TemplateError) -> Self
+pub fn Value::from_function(String, (State, Array[Self]) -> Self raise TemplateError) -> Self
+pub fn Value::from_int(Int) -> Self
+pub fn Value::from_int64(Int64) -> Self
+pub fn Value::from_json(Json) -> Self
+pub fn Value::from_json_str(String, sort_keys? : Bool) -> Self raise TemplateError
+pub fn Value::from_map(Map[Self, Self]) -> Self
+pub fn[T : Object] Value::from_object(T) -> Self
+pub fn Value::from_pairs(Array[(String, Self)]) -> Self
+pub fn Value::from_safe_string(String) -> Self
+pub fn Value::from_str_map(Map[String, Self]) -> Self
+pub fn Value::from_string(String) -> Self
+pub fn Value::from_tuple(Array[Self]) -> Self
+pub fn Value::from_uint64(UInt64) -> Self
+pub fn Value::get_attr(Self, String) -> Self raise TemplateError
+pub fn Value::get_item(Self, Self) -> Self raise TemplateError
+pub fn Value::get_item_by_index(Self, Int) -> Self raise TemplateError
+pub fn Value::is_integer(Self) -> Bool
+pub fn Value::is_kwargs(Self) -> Bool
+pub fn Value::is_none(Self) -> Bool
+pub fn Value::is_number(Self) -> Bool
+pub fn Value::is_safe(Self) -> Bool
+pub fn Value::is_true(Self) -> Bool
+pub fn Value::is_tuple(Self) -> Bool
+pub fn Value::is_undefined(Self) -> Bool
+pub fn Value::kind(Self) -> ValueKind
+pub fn Value::len(Self) -> Int?
+pub fn Value::make_iterable(() -> Iter[Self]) -> Self
+pub fn Value::make_object_map(() -> Iter[Self], (Self) -> Self?) -> Self
+pub fn Value::make_one_shot_iterator(Iter[Self]) -> Self
+pub fn Value::none() -> Self
+pub fn Value::reverse(Self) -> Self raise TemplateError
+pub fn Value::to_json_string(Self, indent? : Int) -> String raise TemplateError
+pub fn Value::to_str(Self) -> String?
+pub fn Value::to_string(Self) -> String
+pub fn Value::try_iter(Self) -> Iter[Self] raise TemplateError
+pub fn Value::undefined() -> Self
+pub impl Compare for Value
+pub impl Eq for Value
+pub impl Hash for Value
+pub impl Show for Value
+pub impl @debug.Debug for Value
+
+pub(all) enum ValueKind {
+  Undefined
+  Null
+  Bool
+  Number
+  String
+  Bytes
+  Seq
+  Map
+  Iterable
+  Plain
+  Invalid
+} derive(Compare, Eq, @debug.Debug)
+pub fn ValueKind::to_string(Self) -> String
+pub impl Show for ValueKind
+
+type WhitespaceConfig derive(Default)
+
+// Type aliases
+pub type FormatterFunc = (Output, State, Value) -> Unit raise TemplateError
+
+pub type NativeFunction = (State, Array[Value]) -> Value raise TemplateError
+
+// Traits
+pub(open) trait Object {
+  fn repr(Self) -> ObjectRepr = _
+  fn get_value(Self, Value) -> Value? = _
+  fn get_value_by_str(Self, String) -> Value? = _
+  fn enumerate(Self) -> Enumerator = _
+  fn enumerator_len(Self) -> Int? = _
+  fn is_true(Self) -> Bool = _
+  fn call(Self, State, Array[Value]) -> Value raise TemplateError = _
+  fn call_method(Self, State, String, Array[Value]) -> Value raise TemplateError = _
+  fn render(Self) -> String? = _
+}
