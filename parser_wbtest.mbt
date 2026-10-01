@@ -1,4 +1,5 @@
 ///|
+#cfg(any(target="native", target="wasm"))
 async test "parser snapshots" {
   run_snapshot_suite(
     "parser",

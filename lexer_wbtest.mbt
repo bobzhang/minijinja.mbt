@@ -83,6 +83,7 @@ fn stringify_tokens(tokens : Array[(Token, Span)], contents : String) -> String 
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 async test "lexer snapshots" {
   run_snapshot_suite("lexer", "testdata/lexer-inputs", "test_lexer__lexer@", (
     _name,

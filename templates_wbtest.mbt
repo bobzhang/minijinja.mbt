@@ -67,6 +67,7 @@ fn apply_template_settings(
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 async fn load_refs(dir : String) -> Array[(String, String)] {
   let rv = []
   for name in @fs.readdir(dir, sort=true) {
@@ -78,6 +79,7 @@ async fn load_refs(dir : String) -> Array[(String, String)] {
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 async test "template snapshots" {
   let refs = load_refs("testdata/inputs/refs")
   run_snapshot_suite("templates", "testdata/inputs", "test_templates__vm@", (
@@ -124,6 +126,7 @@ async test "template snapshots" {
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 async test "block fragment snapshots" {
   let refs = load_refs("testdata/fragment-inputs/refs")
   run_snapshot_suite(

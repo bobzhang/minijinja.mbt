@@ -18,6 +18,7 @@ fn finish_debug(c : CodeGenerator) -> String {
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 async fn assert_compiler_snapshot(name : String, actual : String) -> Unit {
   let expected = normalize_snapshot(
     snapshot_body(read_text("testdata/snapshots/test_compiler__\{name}.snap")),
@@ -26,6 +27,7 @@ async fn assert_compiler_snapshot(name : String, actual : String) -> Unit {
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 async test "compiler: for loop" {
   let c = CodeGenerator::new("<unknown>", "")
   c.add(Lookup("items")) |> ignore
@@ -37,6 +39,7 @@ async test "compiler: for loop" {
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 async test "compiler: if branches" {
   let c = CodeGenerator::new("<unknown>", "")
   c.add(Lookup("false")) |> ignore
@@ -54,6 +57,7 @@ async test "compiler: if branches" {
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 async test "compiler: bool ops" {
   let c = CodeGenerator::new("<unknown>", "")
   c.start_sc_bool()
@@ -67,6 +71,7 @@ async test "compiler: bool ops" {
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 async test "compiler: const" {
   let c = CodeGenerator::new("<unknown>", "")
   c.add(LoadConst(Value::from_string("a"))) |> ignore

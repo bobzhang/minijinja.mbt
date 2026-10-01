@@ -1,4 +1,5 @@
 ///|
+#cfg(any(target="native", target="wasm"))
 async fn read_text(path : String) -> String {
   let data = @fs.read_file(path)
   @utf8.decode_lossy(data.binary())
@@ -67,6 +68,7 @@ fn split_fixture(contents : String) -> (String, String) {
 /// Runs `render` for every file in `dir` and compares the output with the
 /// snapshot `snapshots/<prefix><name>.snap`.  Cases listed in
 /// `testdata/known_failures.txt` (as `<suite>/<name>`) may fail.
+#cfg(any(target="native", target="wasm"))
 async fn run_snapshot_suite(
   suite : String,
   dir : String,
