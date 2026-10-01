@@ -1,0 +1,17 @@
+import {
+  "bobzhang/minijinja/internal/rfmt",
+  "bobzhang/minijinja/internal/unicode",
+  "moonbitlang/core/string",
+  "moonbitlang/core/bigint",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/math",
+}
+
+warnings = "-implicit_impl_as_method"
+
+import {
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/io",
+  "moonbitlang/core/json",
+} for "wbtest"

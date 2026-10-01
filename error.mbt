@@ -106,19 +106,19 @@ pub fn ErrorKind::description(self : ErrorKind) -> String {
 }
 
 ///|
-pub impl Show for ErrorKind with output(self, logger) {
+pub impl Show for ErrorKind with fn output(self, logger) {
   logger.write_string(self.description())
 }
 
 ///|
 /// Debug information that is attached to errors raised during rendering.
-struct DebugInfo {
+priv struct DebugInfo {
   template_source : String?
   referenced_locals : Map[String, Value]
 }
 
 ///|
-priv struct ErrorData {
+struct ErrorData {
   kind : ErrorKind
   mut detail : String?
   mut name : String?
@@ -134,7 +134,7 @@ priv struct ErrorData {
 /// Errors carry a [`ErrorKind`], an optional detail message, and — once the
 /// engine knows about it — the name of the template and the location in it.
 pub suberror TemplateError {
-  priv TemplateError(ErrorData)
+  TemplateError(ErrorData)
 }
 
 ///|
@@ -356,7 +356,7 @@ pub fn TemplateError::display_debug_info(self : TemplateError) -> String {
 }
 
 ///|
-pub impl Show for TemplateError with output(self, logger) {
+pub impl Show for TemplateError with fn output(self, logger) {
   logger.write_string(self.to_string())
 }
 
@@ -426,11 +426,15 @@ fn TemplateError::render_debug_info(
     let pre_count = if idx < 3 { idx } else { 3 }
     for i in skip..<(skip + pre_count) {
       if i < lines.length() {
-        sb.write_string("\{right_align((i + 1).to_string(), 4)} | \{lines[i]}\n")
+        sb.write_string(
+          "\{right_align((i + 1).to_string(), 4)} | \{lines[i]}\n",
+        )
       }
     }
     if idx < lines.length() {
-      sb.write_string("\{right_align((idx + 1).to_string(), 4)} > \{lines[idx]}\n")
+      sb.write_string(
+        "\{right_align((idx + 1).to_string(), 4)} > \{lines[idx]}\n",
+      )
     }
     if d.span is Some(span) && span.start_line == span.end_line {
       sb.write_string("     i ")
@@ -444,7 +448,9 @@ fn TemplateError::render_debug_info(
     }
     for i in (idx + 1)..<(idx + 4) {
       if i < lines.length() {
-        sb.write_string("\{right_align((i + 1).to_string(), 4)} | \{lines[i]}\n")
+        sb.write_string(
+          "\{right_align((i + 1).to_string(), 4)} | \{lines[i]}\n",
+        )
       }
     }
     sb.write_string(center_pad("", 79, '~'))
