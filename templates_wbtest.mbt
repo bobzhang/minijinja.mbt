@@ -122,3 +122,39 @@ async test "template snapshots" {
     }
   })
 }
+
+///|
+async test "block fragment snapshots" {
+  let refs = load_refs("testdata/fragment-inputs/refs")
+  run_snapshot_suite(
+    "fragments",
+    "testdata/fragment-inputs",
+    "test_templates__vm_block_fragments@",
+    (name, contents) => {
+      let (header, content) = split_fixture(contents)
+      let env = Environment::new()
+      let ctx = Value::from_json_str(header, sort_keys=true)
+      for item in refs {
+        env.add_template(item.0, item.1)
+      }
+      env.add_template(name, content) catch {
+        err => return render_error("!!!SYNTAX ERROR!!!", err)
+      }
+      let template = env.get_template(name)
+      try render_fragment(template, ctx) catch {
+        err => render_error_chain(err)
+      } noraise {
+        rendered => rendered + "\n"
+      }
+    },
+  )
+}
+
+///|
+fn render_fragment(
+  template : Template,
+  ctx : Value,
+) -> String raise TemplateError {
+  let captured = template.render_captured(ctx)
+  captured.state.render_block("fragment")
+}
