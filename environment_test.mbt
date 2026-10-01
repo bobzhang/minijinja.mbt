@@ -224,3 +224,15 @@ test "environment: iter" {
   assert_true(renders.contains(("hello", "Hello World!")))
   assert_true(renders.contains(("goodbye", "Goodbye World!")))
 }
+
+///|
+test "environment: clone does not share later modifications" {
+  let env = @minijinja.Environment::new()
+  let env2 = env.clone()
+  env.add_global("x", @minijinja.Value::from_int(1))
+  env2.add_global("x", @minijinja.Value::from_int(2))
+  let none = @minijinja.Value::none()
+  assert_eq(env.render_str("{{ x }}", none), "1")
+  assert_eq(env2.render_str("{{ x }}", none), "2")
+  assert_eq(@minijinja.Environment::new().render_str("{{ x }}", none), "")
+}

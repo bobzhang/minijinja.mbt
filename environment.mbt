@@ -27,9 +27,12 @@ pub type NativeFunction = (State, Array[Value]) -> Value raise TemplateError
 pub struct Environment {
   priv templates : Map[String, CompiledTemplate]
   priv mut loader : ((String) -> String? raise TemplateError)?
-  priv filters : Map[String, Value]
-  priv tests : Map[String, Value]
-  priv globals : Map[String, Value]
+  // the builtin maps are shared between environments until modified
+  // (copy-on-write, like `Arc::make_mut` upstream)
+  priv mut filters : Map[String, Value]
+  priv mut tests : Map[String, Value]
+  priv mut globals : Map[String, Value]
+  priv mut maps_shared : Bool
   priv mut path_join_callback : ((String, String) -> String)?
   priv mut unknown_method_callback : ((State, Value, String, Array[Value]) -> Value raise TemplateError)?
   priv mut undefined_behavior : UndefinedBehavior
@@ -61,9 +64,10 @@ fn default_formatter(
 pub fn Environment::new() -> Environment {
   let env = Environment::empty()
   env.auto_escape_callback = default_auto_escape_callback
-  register_builtin_filters(env.filters)
-  register_builtin_tests(env.tests)
-  register_builtin_globals(env.globals)
+  env.filters = builtin_filters
+  env.tests = builtin_tests
+  env.globals = builtin_globals
+  env.maps_shared = true
   env
 }
 
@@ -79,6 +83,7 @@ pub fn Environment::empty() -> Environment {
     filters: Map::new(),
     tests: Map::new(),
     globals: Map::new(),
+    maps_shared: false,
     path_join_callback: None,
     unknown_method_callback: None,
     undefined_behavior: Lenient,
@@ -436,12 +441,14 @@ pub fn Environment::add_filter(
   name : String,
   f : NativeFunction,
 ) -> Unit {
+  self.unshare_maps()
   self.filters[name] = Value::from_function(name, f)
 }
 
 ///|
 /// Removes a filter by name.
 pub fn Environment::remove_filter(self : Environment, name : String) -> Unit {
+  self.unshare_maps()
   self.filters.remove(name)
 }
 
@@ -455,12 +462,14 @@ pub fn Environment::add_test(
   name : String,
   f : NativeFunction,
 ) -> Unit {
+  self.unshare_maps()
   self.tests[name] = Value::from_function(name, f)
 }
 
 ///|
 /// Removes a test by name.
 pub fn Environment::remove_test(self : Environment, name : String) -> Unit {
+  self.unshare_maps()
   self.tests.remove(name)
 }
 
@@ -481,12 +490,14 @@ pub fn Environment::add_global(
   name : String,
   value : Value,
 ) -> Unit {
+  self.unshare_maps()
   self.globals[name] = value
 }
 
 ///|
 /// Removes a global function or variable by name.
 pub fn Environment::remove_global(self : Environment, name : String) -> Unit {
+  self.unshare_maps()
   self.globals.remove(name)
 }
 
@@ -500,12 +511,12 @@ pub fn Environment::globals(self : Environment) -> Array[(String, Value)] {
 /// Creates a copy of the environment.  Templates, filters, tests and
 /// globals added to the copy do not affect the original and vice versa.
 pub fn Environment::clone(self : Environment) -> Environment {
+  // both environments now share the maps until one of them modifies them
+  self.maps_shared = true
   {
     ..self,
     templates: Map::from_iter(self.templates.iter()),
-    filters: Map::from_iter(self.filters.iter()),
-    tests: Map::from_iter(self.tests.iter()),
-    globals: Map::from_iter(self.globals.iter()),
+    maps_shared: true,
   }
 }
 
@@ -712,4 +723,15 @@ pub fn builtin_test(name : String) -> Value? {
 /// `namespace`) by name.
 pub fn builtin_function(name : String) -> Value? {
   builtin_globals.get(name)
+}
+
+///|
+/// Copies the (shared) filter, test and global maps before modifying them.
+fn Environment::unshare_maps(self : Environment) -> Unit {
+  if self.maps_shared {
+    self.filters = Map::from_iter(self.filters.iter())
+    self.tests = Map::from_iter(self.tests.iter())
+    self.globals = Map::from_iter(self.globals.iter())
+    self.maps_shared = false
+  }
 }

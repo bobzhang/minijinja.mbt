@@ -23,3 +23,14 @@ test "micro" (b : @bench.T) {
     b, "tuple_loop", "{% for i in range(200) %}{% set x = (i, i) %}{% endfor %}",
   )
 }
+
+///|
+test "micro: env and parse" (b : @bench.T) {
+  b.bench(name="env_new", () => b.keep(@minijinja.Environment::new()))
+  let env = @minijinja.Environment::new()
+  b.bench(name="compile_only", () => {
+    env.add_template("all_elements.html", all_elements_src) catch {
+      _ => abort("failed")
+    }
+  })
+}
