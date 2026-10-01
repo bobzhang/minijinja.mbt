@@ -656,3 +656,55 @@ fn attach_basic_debug_info(
   })
   err
 }
+
+///|
+let builtin_filters : Map[String, Value] = {
+  let rv = Map::new()
+  register_builtin_filters(rv)
+  rv
+}
+
+///|
+let builtin_tests : Map[String, Value] = {
+  let rv = Map::new()
+  register_builtin_tests(rv)
+  rv
+}
+
+///|
+let builtin_globals : Map[String, Value] = {
+  let rv = Map::new()
+  register_builtin_globals(rv)
+  rv
+}
+
+///|
+/// Returns one of the built-in filters by name (independent of any
+/// environment).  The returned value is callable with `Value::call`; the
+/// first argument is the value the filter is applied to.
+///
+/// ```mbt check
+/// test {
+///   let env = @minijinja.Environment::empty()
+///   let state = env.empty_state()
+///   guard @minijinja.builtin_filter("upper") is Some(upper) else { fail("missing") }
+///   inspect(upper.call(state, [@minijinja.Value::from_string("hi")]), content="HI")
+/// }
+/// ```
+pub fn builtin_filter(name : String) -> Value? {
+  builtin_filters.get(name)
+}
+
+///|
+/// Returns one of the built-in tests by name (independent of any
+/// environment).
+pub fn builtin_test(name : String) -> Value? {
+  builtin_tests.get(name)
+}
+
+///|
+/// Returns one of the built-in global functions (`range`, `dict`, `debug`,
+/// `namespace`) by name.
+pub fn builtin_function(name : String) -> Value? {
+  builtin_globals.get(name)
+}

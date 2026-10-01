@@ -7,6 +7,12 @@ import {
 }
 
 // Values
+pub fn builtin_filter(String) -> Value?
+
+pub fn builtin_function(String) -> Value?
+
+pub fn builtin_test(String) -> Value?
+
 pub fn default_auto_escape_callback(String) -> AutoEscape
 
 pub fn format_string(FormatStyle, String, Array[Value]) -> String raise TemplateError
