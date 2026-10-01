@@ -233,7 +233,18 @@ pub fn DynObject::get_value_by_str(self : DynObject, key : String) -> Value? {
   match self.inner {
     Seq(_) | Tuple(_) | MergeSeq(_) | Group(_, _) =>
       self.get_value(Value::from_string(key))
-    Map(m) | Kwargs(m) => m.get(Value::from_string(key))
+    Map(m) | Kwargs(m) =>
+      if m.length() <= 12 {
+        // like MiniJinja: small maps are scanned without building a key
+        for k, v in m {
+          if k is Str(s, _) && s == key {
+            return Some(v)
+          }
+        }
+        None
+      } else {
+        m.get(Value::from_string(key))
+      }
     Namespace(m) => m.get(key)
     Loop(l) => l.get_value_by_str(key)
     ClosureRef(_) => None
