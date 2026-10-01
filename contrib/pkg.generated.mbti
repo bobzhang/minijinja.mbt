@@ -1,0 +1,41 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/minijinja/contrib"
+
+import {
+  "bobzhang/minijinja",
+}
+
+// Values
+pub fn add_to_environment(@minijinja.Environment) -> Unit
+
+pub fn cycler(Array[@minijinja.Value]) -> @minijinja.Value raise @minijinja.TemplateError
+
+pub fn filesizeformat(Double, binary? : Bool) -> String
+
+pub fn joiner(sep? : @minijinja.Value) -> @minijinja.Value
+
+pub fn lipsum(@minijinja.State, n? : Int, @minijinja.Kwargs) -> @minijinja.Value raise @minijinja.TemplateError
+
+pub fn pluralize(@minijinja.Value, singular? : @minijinja.Value, plural? : @minijinja.Value) -> @minijinja.Value raise @minijinja.TemplateError
+
+pub fn random(@minijinja.State, @minijinja.Value) -> @minijinja.Value raise @minijinja.TemplateError
+
+pub fn randrange(@minijinja.State, Int64, m? : Int64) -> Int64
+
+pub fn striptags(String) -> String
+
+pub fn truncate(@minijinja.State, @minijinja.Value, @minijinja.Kwargs) -> @minijinja.Value raise @minijinja.TemplateError
+
+pub fn unknown_method_callback(@minijinja.State, @minijinja.Value, String, Array[@minijinja.Value]) -> @minijinja.Value raise @minijinja.TemplateError
+
+pub fn wordcount(@minijinja.Value) -> @minijinja.Value
+
+pub fn wordwrap(@minijinja.Value, @minijinja.Kwargs) -> @minijinja.Value raise @minijinja.TemplateError
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

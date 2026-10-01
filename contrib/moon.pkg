@@ -1,0 +1,8 @@
+import {
+  "bobzhang/minijinja",
+  "bobzhang/minijinja/internal/unicode",
+  "bobzhang/minijinja/internal/rfmt",
+  "moonbitlang/core/env",
+  "moonbitlang/core/math",
+  "moonbitlang/core/uint64",
+}
