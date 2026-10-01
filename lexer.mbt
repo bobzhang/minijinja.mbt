@@ -269,7 +269,7 @@ fn skip_basic_tag(
 
 ///|
 /// Tokenizes jinja templates.
-struct Tokenizer {
+priv struct Tokenizer {
   stack : Array[LexerState]
   source : String
   filename : String
