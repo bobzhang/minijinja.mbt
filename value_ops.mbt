@@ -625,7 +625,7 @@ fn value_int_div(lhs : Value, rhs : Value) -> Value raise TemplateError {
     Some(Int(_, _) | Big(_, _) | F64(_, _)) => raise failed_op("//", lhs, rhs)
     _ => raise impossible_op("//", lhs, rhs)
   }
-  guard big is Some((a, b))
+  guard big is Some((a, b)) else { abort("unreachable") }
   if a == i128_min && b == -1N {
     U128(min_i128_as_pos_u128)
   } else {

@@ -912,3 +912,14 @@ fn utf8_decode_strict(b : Bytes) -> String? {
 fn utf8_decode_lossy(b : Bytes) -> String {
   @utf8.decode_lossy(b)
 }
+
+///|
+/// Wraps a map into keyword arguments.
+fn Value::from_kwargs_map(m : Map[Value, Value]) -> Value {
+  Object(DynObject::new(Kwargs(m)))
+}
+
+///|
+pub impl @debug.Debug for Value with fn to_repr(self) {
+  @debug.Repr::Repr(self.debug_string())
+}

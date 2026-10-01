@@ -368,7 +368,7 @@ fn Parser::parse_not(self : Parser) -> Expr raise TemplateError {
 fn Parser::parse_compare(self : Parser) -> Expr raise TemplateError {
   let span = self.stream.last_span
   let expr = self.parse_math1()
-  let ops : Array[CompareOp] = []
+  let ops : Array[CompareOperand] = []
   for ;; {
     let op : CompareOpKind = match self.stream.current() {
       Some((Eq, _)) => Eq

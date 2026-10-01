@@ -249,7 +249,7 @@ priv struct BinOpNode {
 }
 
 ///|
-priv struct CompareOp {
+priv struct CompareOperand {
   op : CompareOpKind
   expr : Expr
 }
@@ -257,7 +257,7 @@ priv struct CompareOp {
 ///|
 priv struct CompareNode {
   expr : Expr
-  ops : Array[CompareOp]
+  ops : Array[CompareOperand]
   span : Span
 }
 
