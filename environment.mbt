@@ -687,8 +687,13 @@ let builtin_globals : Map[String, Value] = {
 /// test {
 ///   let env = @minijinja.Environment::empty()
 ///   let state = env.empty_state()
-///   guard @minijinja.builtin_filter("upper") is Some(upper) else { fail("missing") }
-///   inspect(upper.call(state, [@minijinja.Value::from_string("hi")]), content="HI")
+///   guard @minijinja.builtin_filter("upper") is Some(upper) else {
+///     fail("missing")
+///   }
+///   inspect(
+///     upper.call(state, [@minijinja.Value::from_string("hi")]),
+///     content="HI",
+///   )
 /// }
 /// ```
 pub fn builtin_filter(name : String) -> Value? {

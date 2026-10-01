@@ -1,0 +1,7 @@
+import {
+  "bobzhang/minijinja",
+}
+
+import {
+  "moonbitlang/core/bench",
+} for "wbtest"
