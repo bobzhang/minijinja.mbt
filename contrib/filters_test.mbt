@@ -321,3 +321,31 @@ test "test_striptags" {
   assert_eq(@contrib.striptags("This is &unknown x"), "This is &unknown x")
   assert_eq(@contrib.striptags("This is &unknown; x"), "This is &unknown; x")
 }
+
+///|
+test "codex review 3 regressions" {
+  let env = @minijinja.Environment::new()
+  @contrib.add_to_environment(env)
+  env.set_unknown_method_callback(@contrib.unknown_method_callback)
+  inspect(
+    env.render_str(
+      "{{ 'abcdefgh'|truncate(length=3, leeway=2147483647) }}",
+      @minijinja.Value::none(),
+    ),
+    content="abcdefgh",
+  )
+  try
+    env.render_str("{{ '{:😀}'.format(1) }}", @minijinja.Value::none())
+    |> ignore
+  catch {
+    err =>
+      inspect(
+        err.detail().unwrap_or(""),
+        content=(
+          #|invalid conversion type '😀' in format spec at offset 2
+        ),
+      )
+  } noraise {
+    _ => fail("expected error")
+  }
+}

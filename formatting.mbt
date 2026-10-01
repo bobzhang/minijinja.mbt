@@ -701,6 +701,19 @@ fn FmtCursor::peek(self : FmtCursor) -> Int {
 }
 
 ///|
+/// Returns the full character at the cursor (decoding surrogate pairs).
+fn FmtCursor::peek_full_char(self : FmtCursor) -> Char {
+  let hi = self.source[self.pos].to_int()
+  if hi >= 0xD800 && hi <= 0xDBFF && self.pos + 1 < self.source.length() {
+    let lo = self.source[self.pos + 1].to_int()
+    if lo >= 0xDC00 && lo <= 0xDFFF {
+      return (0x10000 + ((hi - 0xD800) << 10) + (lo - 0xDC00)).unsafe_to_char()
+    }
+  }
+  hi.unsafe_to_char()
+}
+
+///|
 fn FmtCursor::advance_if(self : FmtCursor, c : Char) -> Bool {
   if self.peek() == c.to_int() {
     self.pos += 1
@@ -829,9 +842,9 @@ fn fmt_parse_type(
       'c' => Char
       's' => String
       '}' if style == StrFormat => return Default
-      ch =>
+      _ =>
         raise fmt_err(
-          "invalid conversion type '\{ch}' in format spec at offset \{cursor.byte_pos()}",
+          "invalid conversion type '\{cursor.peek_full_char()}' in format spec at offset \{cursor.byte_pos()}",
         )
     }
   }
@@ -1024,7 +1037,7 @@ fn str_format_replacement_field(
     let c = cursor.peek()
     if c >= 0 {
       raise fmt_err(
-        "expected closing '}' in format spec at offset \{location}; found '\{c.unsafe_to_char()}'",
+        "expected closing '}' in format spec at offset \{location}; found '\{cursor.peek_full_char()}'",
       )
     } else {
       raise fmt_err("missing closing '}' in format spec at offset \{location}")

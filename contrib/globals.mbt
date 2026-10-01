@@ -58,7 +58,7 @@ pub fn cycler(
       "at least one value required",
     )
   }
-  @minijinja.Value::from_object(Cycler::{ items, pos: 0, })
+  @minijinja.Value::from_object(Cycler::{ items: items.copy(), pos: 0, })
 }
 
 ///|

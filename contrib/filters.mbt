@@ -218,7 +218,7 @@ pub fn truncate(
     )
   }
   let chars = s.iter().to_array()
-  if chars.length() <= length + leeway {
+  if chars.length().to_int64() <= length.to_int64() + leeway.to_int64() {
     return value
   }
   let trunc_pos = length - end_len
