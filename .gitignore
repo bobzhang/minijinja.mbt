@@ -1,0 +1,5 @@
+.repos/
+_build/
+target/
+.mooncakes/
+.claude/
