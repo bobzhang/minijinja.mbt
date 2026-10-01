@@ -15,4 +15,5 @@ import {
   "moonbitlang/async/fs",
   "moonbitlang/async/io",
   "moonbitlang/core/json",
+  "moonbitlang/core/bench",
 } for "wbtest"
