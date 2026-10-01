@@ -41,6 +41,7 @@ pub fn TemplateError::template_source(Self) -> String?
 pub fn TemplateError::to_string(Self) -> String
 pub fn TemplateError::with_source(Self, Self) -> Self
 pub impl Show for TemplateError
+pub impl @debug.Debug for TemplateError
 
 // Types and methods
 pub struct Args {
@@ -54,6 +55,7 @@ pub fn Args::i32(Self) -> Int raise TemplateError
 pub fn Args::i64(Self) -> Int64 raise TemplateError
 pub fn Args::kwargs(Self) -> Kwargs
 pub fn Args::new(State, Array[Value]) -> Self
+pub fn[T : FromValue] Args::next(Self) -> T raise TemplateError
 pub fn Args::opt_bool(Self) -> Bool? raise TemplateError
 pub fn Args::opt_i32(Self) -> Int? raise TemplateError
 pub fn Args::opt_i64(Self) -> Int64? raise TemplateError
@@ -152,6 +154,7 @@ pub fn Environment::syntax(Self) -> SyntaxConfig
 pub fn Environment::template_from_named_str(Self, String, String) -> Template raise TemplateError
 pub fn Environment::template_from_str(Self, String) -> Template raise TemplateError
 pub fn Environment::template_names(Self) -> Array[String]
+pub fn Environment::templates(Self) -> Array[(String, Template)]
 pub fn Environment::trim_blocks(Self) -> Bool
 pub fn Environment::undefined_behavior(Self) -> UndefinedBehavior
 
@@ -189,7 +192,7 @@ pub struct Expression {
   // private fields
 }
 pub fn Expression::eval(Self, Value) -> Value raise TemplateError
-pub fn Expression::undeclared_variables(Self, Bool) -> Array[String]
+pub fn Expression::undeclared_variables(Self, nested? : Bool) -> Array[String]
 
 pub(all) enum FormatStyle {
   Printf
@@ -203,6 +206,7 @@ pub fn Kwargs::args(Self) -> Array[String]
 pub fn Kwargs::assert_all_used(Self) -> Unit raise TemplateError
 pub fn Kwargs::from_pairs(Array[(String, Value)]) -> Self
 pub fn Kwargs::get(Self, String) -> Value raise TemplateError
+pub fn[T : FromValue] Kwargs::get_as(Self, String) -> T raise TemplateError
 pub fn Kwargs::get_bool(Self, String) -> Bool? raise TemplateError
 pub fn Kwargs::get_int(Self, String) -> Int64? raise TemplateError
 pub fn Kwargs::get_opt(Self, String) -> Value? raise TemplateError
@@ -224,8 +228,8 @@ pub(all) enum ObjectRepr {
 pub struct Output {
   // private fields
 }
-pub fn Output::write_char(Self, Char) -> Unit
-pub fn Output::write_str(Self, StringView) -> Unit
+pub fn Output::write_char(Self, Char) -> Unit raise TemplateError
+pub fn Output::write_str(Self, StringView) -> Unit raise TemplateError
 
 pub(all) struct Span {
   start_line : Int
@@ -256,6 +260,7 @@ pub fn State::lookup(Self, String) -> Value?
 pub fn State::name(Self) -> String
 pub fn State::perform_test(Self, String, Array[Value]) -> Bool raise TemplateError
 pub fn State::render_block(Self, String) -> String raise TemplateError
+pub fn State::render_block_to(Self, String, (StringView) -> Unit raise) -> Unit raise TemplateError
 pub fn State::set_temp(Self, String, Value) -> Value?
 pub fn State::undefined_behavior(Self) -> UndefinedBehavior
 
@@ -286,8 +291,9 @@ pub fn Template::name(Self) -> String
 pub fn Template::new_state(Self) -> State
 pub fn Template::render(Self, Value) -> String raise TemplateError
 pub fn Template::render_captured(Self, Value) -> Captured raise TemplateError
+pub fn Template::render_to(Self, Value, (StringView) -> Unit raise) -> State raise TemplateError
 pub fn Template::source(Self) -> String
-pub fn Template::undeclared_variables(Self, Bool) -> Array[String]
+pub fn Template::undeclared_variables(Self, nested? : Bool) -> Array[String]
 
 type Token
 
@@ -299,15 +305,19 @@ pub(all) enum UndefinedBehavior {
 } derive(Eq)
 
 type Value
+pub fn Value::as_bigint(Self) -> @bigint.BigInt?
+pub fn Value::as_bool(Self) -> Bool?
 pub fn Value::as_bytes(Self) -> Bytes?
 pub fn Value::as_f64(Self) -> Double?
 pub fn Value::as_i64(Self) -> Int64?
 pub fn Value::as_object(Self) -> DynObject?
 pub fn Value::as_str(Self) -> String?
+pub fn Value::as_uint64(Self) -> UInt64?
 pub fn Value::as_usize(Self) -> Int?
 pub fn Value::call(Self, State, Array[Self]) -> Self raise TemplateError
 pub fn Value::call_method(Self, State, String, Array[Self]) -> Self raise TemplateError
 pub fn Value::cmp(Self, Self) -> Int
+pub fn[T : FromValue] Value::convert(Self) -> T raise TemplateError
 pub fn Value::debug_string(Self, pretty? : Bool) -> String
 pub fn Value::from_array(Array[Self]) -> Self
 pub fn Value::from_bigint(@bigint.BigInt) -> Self
@@ -353,6 +363,7 @@ pub fn Value::to_str(Self) -> String?
 pub fn Value::to_string(Self) -> String
 pub fn Value::try_iter(Self) -> Iter[Self] raise TemplateError
 pub fn Value::undefined() -> Self
+pub impl FromValue for Value
 pub impl Compare for Value
 pub impl Eq for Value
 pub impl Hash for Value
@@ -383,6 +394,18 @@ pub type FormatterFunc = (Output, State, Value) -> Unit raise TemplateError
 pub type NativeFunction = (State, Array[Value]) -> Value raise TemplateError
 
 // Traits
+pub(open) trait FromValue {
+  fn from_value(Value?) -> Self raise TemplateError
+}
+pub impl FromValue for Bool
+pub impl FromValue for Int
+pub impl FromValue for Int64
+pub impl FromValue for UInt64
+pub impl FromValue for Double
+pub impl FromValue for String
+pub impl[T : FromValue] FromValue for T?
+pub impl[T : FromValue] FromValue for Array[T]
+
 pub(open) trait Object {
   fn repr(Self) -> ObjectRepr = _
   fn get_value(Self, Value) -> Value? = _

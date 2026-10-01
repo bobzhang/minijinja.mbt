@@ -939,3 +939,36 @@ fn Value::from_kwargs_map(m : Map[Value, Value]) -> Value {
 pub impl @debug.Debug for Value with fn to_repr(self) {
   @debug.Repr::Repr(self.debug_string())
 }
+
+///|
+/// Returns the boolean if the value is a boolean (no truthiness check).
+pub fn Value::as_bool(self : Value) -> Bool? {
+  match self {
+    Bool(b) => Some(b)
+    _ => None
+  }
+}
+
+///|
+/// Returns the value as `UInt64` if it is a non-negative integer (or an
+/// integral float) that fits.
+pub fn Value::as_uint64(self : Value) -> UInt64? {
+  match self {
+    U64(v) => Some(v)
+    _ =>
+      match self.to_i128() {
+        Some(v) if v >= 0N && v <= max_u64_big => Some(v.to_uint64())
+        _ => None
+      }
+  }
+}
+
+///|
+/// Returns the value as a big integer if it is an integer (or an integral
+/// float).  Covers the full 128 bit range.
+pub fn Value::as_bigint(self : Value) -> BigInt? {
+  match self {
+    U128(v) => Some(v)
+    _ => self.to_i128()
+  }
+}

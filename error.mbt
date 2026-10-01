@@ -532,3 +532,8 @@ fn rust_lines(s : String) -> Array[String] {
   }
   rv
 }
+
+///|
+pub impl @debug.Debug for TemplateError with fn to_repr(self) {
+  @debug.Repr::Repr(self.debug_string())
+}

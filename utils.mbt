@@ -163,7 +163,10 @@ fn is_ascii_integer_str(s : String) -> Bool {
 }
 
 ///|
-fn write_with_html_escaping(out : Output, value : Value) -> Unit {
+fn write_with_html_escaping(
+  out : Output,
+  value : Value,
+) -> Unit raise TemplateError {
   match value {
     U64(v) => return out.write_str(v.to_string())
     I64(v) => return out.write_str(v.to_string())

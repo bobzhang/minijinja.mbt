@@ -289,6 +289,16 @@ pub fn State::render_block(
 }
 
 ///|
+/// Renders a block with the given name, streaming the output into `write`.
+pub fn State::render_block_to(
+  self : State,
+  block : String,
+  write : (StringView) -> Unit raise,
+) -> Unit raise TemplateError {
+  call_block(block, self, Output::with_sink(write)) |> ignore
+}
+
+///|
 /// Returns a list of the names of all exports (top-level variables).
 pub fn State::exports(self : State) -> Array[String] {
   sorted_keys(self.ctx.exports())

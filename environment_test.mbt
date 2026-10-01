@@ -79,12 +79,12 @@ test "environment: expression_undeclared_variables" {
   // Rust returns a HashSet; compare sorted arrays instead.
   let env = @minijinja.Environment::new()
   let expr = env.compile_expression("[foo, bar.baz]")
-  let undeclared = expr.undeclared_variables(false)
+  let undeclared = expr.undeclared_variables(nested=false)
   undeclared.sort_by(String::lexical_compare)
   let expected = ["bar", "foo"]
   expected.sort_by(String::lexical_compare)
   assert_eq(undeclared, expected)
-  let undeclared = expr.undeclared_variables(true)
+  let undeclared = expr.undeclared_variables(nested=true)
   undeclared.sort_by(String::lexical_compare)
   let expected = ["foo", "bar.baz"]
   expected.sort_by(String::lexical_compare)

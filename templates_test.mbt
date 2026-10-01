@@ -416,9 +416,9 @@ test "templates: undeclared variables" {
     ),
   )
   let tmpl = env.get_template("demo")
-  let undeclared = tmpl.undeclared_variables(false)
+  let undeclared = tmpl.undeclared_variables(nested=false)
   assert_eq(sorted(undeclared), sorted(["foo", "bar", "macro_x"]))
-  let undeclared = tmpl.undeclared_variables(true)
+  let undeclared = tmpl.undeclared_variables(nested=true)
   assert_eq(
     sorted(undeclared),
     sorted(["foo", "bar.baz", "bar.blub", "macro_x"]),
@@ -441,7 +441,7 @@ test "templates: undeclared variables bug" {
     ),
   )
   let tmpl = env.get_template("demo")
-  let undeclared = tmpl.undeclared_variables(true)
+  let undeclared = tmpl.undeclared_variables(nested=true)
   assert_eq(sorted(undeclared), sorted(["foo.bar", "content.products.items"]))
 }
 
@@ -464,7 +464,7 @@ test "templates: undeclared variables macro bug" {
     ),
   )
   let tmpl = env.get_template("demo")
-  let undeclared = tmpl.undeclared_variables(true)
+  let undeclared = tmpl.undeclared_variables(nested=true)
   assert_eq(sorted(undeclared), sorted(["a", "b"]))
 }
 

@@ -84,6 +84,20 @@ pub fn Template::render_captured(
 }
 
 ///|
+/// Renders the template, streaming the output into `write`.
+///
+/// Errors raised by `write` abort rendering with a `WriteFailure` error.
+/// The final state is returned (like [`Template::render_captured`]).
+pub fn Template::render_to(
+  self : Template,
+  ctx : Value,
+  write : (StringView) -> Unit raise,
+) -> State raise TemplateError {
+  let (_, state) = self.eval(ctx, Output::with_sink(write))
+  state
+}
+
+///|
 fn Template::eval(
   self : Template,
   root : Value,
@@ -107,7 +121,7 @@ fn Template::eval(
 /// undeclared variables are tracked as dotted paths (`foo.bar`).
 pub fn Template::undeclared_variables(
   self : Template,
-  nested : Bool,
+  nested? : Bool = false,
 ) -> Array[String] {
   let ast = parse(
     self.compiled.instructions.source,
@@ -188,7 +202,7 @@ pub fn Expression::eval(
 /// Returns a set of all undeclared variables in the expression.
 pub fn Expression::undeclared_variables(
   self : Expression,
-  nested : Bool,
+  nested? : Bool = false,
 ) -> Array[String] {
   let expr = parse_expr(self.instructions.source) catch { _ => return [] }
   let rv = find_undeclared(EmitExpr({ expr, span: Span::default(), }), nested).to_array()

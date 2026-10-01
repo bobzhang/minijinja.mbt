@@ -735,3 +735,11 @@ fn Environment::unshare_maps(self : Environment) -> Unit {
     self.maps_shared = false
   }
 }
+
+///|
+/// Returns all loaded templates (sorted by name).
+pub fn Environment::templates(self : Environment) -> Array[(String, Template)] {
+  sorted_keys_of(self.templates).map(name => {
+    (name, { env: self, compiled: self.templates[name], })
+  })
+}

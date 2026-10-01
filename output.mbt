@@ -5,18 +5,44 @@
 /// capture) and `end_capture` returns what was captured as a value.
 pub struct Output {
   priv target : StringBuilder
+  /// An optional sink that receives the (non captured) output instead of
+  /// `target` when rendering in streaming mode.
+  priv sink : ((StringView) -> Unit raise)?
   priv capture_stack : Array[StringBuilder?]
 }
 
 ///|
 fn Output::new(target : StringBuilder) -> Output {
-  { target, capture_stack: [], }
+  { target, sink: None, capture_stack: [], }
+}
+
+///|
+fn Output::with_sink(sink : (StringView) -> Unit raise) -> Output {
+  { target: StringBuilder(), sink: Some(sink), capture_stack: [], }
+}
+
+///|
+fn Output::write_to_root(
+  self : Output,
+  s : StringView,
+) -> Unit raise TemplateError {
+  match self.sink {
+    None => self.target.write_view(s)
+    Some(sink) =>
+      sink(s) catch {
+        err =>
+          raise TemplateError::new(
+            WriteFailure,
+            "error during rendering: \{err}",
+          )
+      }
+  }
 }
 
 ///|
 /// An output that discards everything.
 fn Output::null() -> Output {
-  { target: StringBuilder(), capture_stack: [None], }
+  { target: StringBuilder(), sink: None, capture_stack: [None], }
 }
 
 ///|
@@ -49,20 +75,23 @@ fn Output::is_discarding(self : Output) -> Bool {
 
 ///|
 /// Writes a string to the output.
-pub fn Output::write_str(self : Output, s : StringView) -> Unit {
+pub fn Output::write_str(
+  self : Output,
+  s : StringView,
+) -> Unit raise TemplateError {
   match self.capture_stack.last() {
     Some(Some(sb)) => sb.write_view(s)
     Some(None) => ()
-    None => self.target.write_view(s)
+    None => self.write_to_root(s)
   }
 }
 
 ///|
 /// Writes a character to the output.
-pub fn Output::write_char(self : Output, c : Char) -> Unit {
+pub fn Output::write_char(self : Output, c : Char) -> Unit raise TemplateError {
   match self.capture_stack.last() {
     Some(Some(sb)) => sb.write_char(c)
     Some(None) => ()
-    None => self.target.write_char(c)
+    None => self.write_to_root(c.to_string())
   }
 }
