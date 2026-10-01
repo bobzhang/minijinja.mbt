@@ -449,10 +449,20 @@ fn write_json(
               }
               first = false
               newline(sb, style, depth + 1)
+              // serde_json's map key serializer
               match k {
                 Str(s, _) => write_json_string(sb, s)
-                U64(_) | I64(_) | U128(_) | I128(_) | Bool(_) =>
+                U64(_) | I64(_) | U128(_) | I128(_) =>
                   write_json_string(sb, k.to_string())
+                Bool(b) =>
+                  write_json_string(sb, if b { "true" } else { "false" })
+                F64(f) if !f.is_nan() && !f.is_inf() =>
+                  write_json_string(sb, json_float(f))
+                F64(_) =>
+                  raise TemplateError::new(
+                    BadSerialization,
+                    "float key must be finite (got NaN or +/-inf)",
+                  )
                 _ =>
                   raise TemplateError::new(
                     BadSerialization,

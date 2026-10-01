@@ -200,7 +200,15 @@ fn write_escaped(
   match auto_escape {
     NoEscape => out.write_str(value.to_string())
     Html => write_with_html_escaping(out, value)
-    Json => out.write_str(value_to_json_string(value, false))
+    Json => {
+      let s = value_to_json_with_style(value, Compact) catch {
+        err =>
+          raise TemplateError::new(BadSerialization, "unable to format to JSON").with_source(
+            err,
+          )
+      }
+      out.write_str(s)
+    }
     Custom(name) =>
       raise TemplateError::new(
         InvalidOperation,

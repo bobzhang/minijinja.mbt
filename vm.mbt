@@ -765,13 +765,15 @@ fn perform_include(
   out : Output,
   ignore_missing : Bool,
 ) -> Unit raise TemplateError {
-  let choices = match name {
+  // candidates are consumed lazily: iteration stops at the first template
+  // that exists (the value might be a one-shot iterator).
+  let choices : Iter[Value] = match name {
     Object(obj) =>
       match obj.try_iter() {
-        Some(iter) => iter.to_array()
-        None => []
+        Some(iter) => iter
+        None => Iter::empty()
       }
-    _ => [name]
+    _ => Iter::singleton(name)
   }
   let templates_tried = []
   for choice in choices {

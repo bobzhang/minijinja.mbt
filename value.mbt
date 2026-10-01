@@ -720,6 +720,8 @@ fn Value::get_path_or_default(
 ///|
 /// Parses a non-negative decimal integer like Rust's `str::parse::<usize>`.
 fn parse_usize(s : StringView) -> Int? {
+  // like Rust, a single leading `+` is accepted
+  let s = if s.length() > 1 && s[0] == '+' { s.view(start_offset=1) } else { s }
   if s.length() == 0 {
     return None
   }

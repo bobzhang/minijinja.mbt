@@ -16,18 +16,24 @@ fn func_range(state : State, args : Array[Value]) -> Value raise TemplateError {
       "cannot create range with step of 0",
     )
   }
-  let len = if step > 0L {
+  // compute the length with unsigned arithmetic so that large ranges do
+  // not overflow
+  let len : UInt64 = if step > 0L {
     if end > start {
-      (end - start + step - 1L) / step
+      let distance = (end - start).reinterpret_as_uint64()
+      let step = step.reinterpret_as_uint64()
+      distance / step + (if distance % step != 0UL { 1UL } else { 0UL })
     } else {
-      0L
+      0UL
     }
   } else if start <= end {
-    0L
+    0UL
   } else {
-    (start - end + -step - 1L) / -step
+    let distance = (start - end).reinterpret_as_uint64()
+    let step = (-step).reinterpret_as_uint64()
+    distance / step + (if distance % step != 0UL { 1UL } else { 0UL })
   }
-  if len > 100000L {
+  if len > 100000UL {
     raise TemplateError::new(InvalidOperation, "range has too many elements")
   }
   let len = len.to_int()

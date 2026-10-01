@@ -553,7 +553,8 @@ fn filter_split(
   a.finish()
   let string = value_to_arc_str(value)
   let maxsplits = match maxsplits {
-    Some(x) if x >= 0L => Some(clamp_int(x + 1L))
+    Some(x) if x >= 0L =>
+      Some(if x >= 0x7FFFFFFEL { 0x7FFFFFFF } else { x.to_int() + 1 })
     _ => None
   }
   let preserve_safety = value.kind() == String && value.is_safe()
@@ -648,6 +649,12 @@ fn filter_abs(state : State, args : Array[Value]) -> Value raise TemplateError {
 fn f64_to_i128_sat(v : Double) -> BigInt {
   if v.is_nan() {
     0N
+  } else if v.is_inf() {
+    if v > 0.0 {
+      i128_max
+    } else {
+      i128_min
+    }
   } else {
     let t = f64_trunc_to_bigint(v)
     if t > i128_max {
@@ -715,8 +722,10 @@ fn parse_f64_rust(s : String) -> Double raise TemplateError {
   if !ok || !seen_digit {
     raise TemplateError::new(InvalidOperation, "invalid float literal")
   }
+  // the syntax was validated above, so a failure here is an overflow which
+  // Rust turns into an infinity
   @string.parse_double(s) catch {
-    _ => raise TemplateError::new(InvalidOperation, "invalid float literal")
+    _ => if neg { -1.0 / 0.0 } else { 1.0 / 0.0 }
   }
 }
 
@@ -814,11 +823,12 @@ fn round_with_negative_precision(
   if value.is_nan() || value.is_inf() {
     return value
   }
-  let decimal_place = -precision
   let zero = if value.reinterpret_as_int64() < 0L { -0.0 } else { 0.0 }
-  if decimal_place >= 309 {
+  // widen before negating: -(-2^31) does not fit into an Int
+  if -precision.to_int64() >= 309L {
     return zero
   }
+  let decimal_place = -precision
   let (digits, point) = @rfmt.exact_decimal(value)
   if digits.is_empty() {
     return zero

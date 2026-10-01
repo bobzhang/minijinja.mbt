@@ -113,6 +113,17 @@ fn f64_trunc_to_bigint(v : Double) -> BigInt {
 }
 
 ///|
+fn clamp_big(v : BigInt, lo : BigInt, hi : BigInt) -> BigInt {
+  if v < lo {
+    lo
+  } else if v > hi {
+    hi
+  } else {
+    v
+  }
+}
+
+///|
 /// Converts a big integer to the nearest double.
 fn bigint_to_f64(v : BigInt) -> Double {
   if in_i64(v) {
@@ -212,9 +223,18 @@ fn as_f64(value : Value, lossy : Bool) -> Double? {
         None
       }
     }
-    U128(x) | I128(x) => {
+    U128(x) => {
       let rv = bigint_to_f64(x)
-      if lossy || f64_trunc_to_bigint(rv) == x {
+      // Rust's `rv as u128` saturates
+      if lossy || clamp_big(f64_trunc_to_bigint(rv), 0N, u128_max) == x {
+        Some(rv)
+      } else {
+        None
+      }
+    }
+    I128(x) => {
+      let rv = bigint_to_f64(x)
+      if lossy || clamp_big(f64_trunc_to_bigint(rv), i128_min, i128_max) == x {
         Some(rv)
       } else {
         None
@@ -805,53 +825,62 @@ fn clamp_int(v : Int64) -> Int {
 }
 
 ///|
+/// Ceiling division for non-negative numbers without overflow.
+fn ceil_div64(a : Int64, b : Int64) -> Int64 {
+  a / b + (if a % b != 0L { 1L } else { 0L })
+}
+
+///|
 /// Port of `range_step_backwards`: the indexes visited by a negative step.
+/// `step` is the (positive) magnitude of the step.
 fn range_step_backwards(
   start : Int64?,
   stop : Int64?,
-  step : Int,
+  step : Int64,
   end : Int,
 ) -> Array[Int] {
   let end64 = end.to_int64()
+  let last = if end64 > 0L { end64 - 1L } else { 0L }
   let start = match start {
-    None => if end > 0 { end - 1 } else { 0 }
-    Some(s) if s >= end64 => if end > 0 { end - 1 } else { 0 }
-    Some(s) if s >= 0L => s.to_int()
+    None => last
+    Some(s) if s >= end64 => last
+    Some(s) if s >= 0L => s
     Some(s) => {
       let r = end64 + s
       if r < 0L {
-        0
+        0L
       } else {
-        r.to_int()
+        r
       }
     }
   }
   let stop = match stop {
-    None => 0
+    None => 0L
     Some(s) if s < 0L => {
       let r = end64 + s
       if r < 0L {
-        0
+        0L
       } else {
-        r.to_int()
+        r
       }
     }
-    Some(s) => clamp_int(s)
-  }
-  let length = if stop == 0 {
-    (start + step) / step
-  } else if start >= stop {
-    (start - stop + step - 1) / step
-  } else {
-    0
+    Some(s) => s
   }
   let rv = []
   if stop > start {
     return rv
   }
+  let length = if stop == 0L {
+    start / step + 1L
+  } else {
+    ceil_div64(start - stop, step)
+  }
   let mut i = start
-  while i >= stop && rv.length() < length {
-    rv.push(i)
+  while i >= stop && rv.length().to_int64() < length {
+    rv.push(i.to_int())
+    if i < step {
+      break
+    }
     i -= step
   }
   rv
@@ -867,15 +896,26 @@ fn[T] slice_array(
   if step > 0L {
     let (s, len) = get_offset_and_len(start, stop, () => items.length())
     let rv = []
-    let mut i = s
-    let end = if len > items.length() - s { items.length() } else { s + len }
+    let n = items.length().to_int64()
+    let s64 = s.to_int64()
+    let end = if len.to_int64() > n - s64 { n } else { s64 + len.to_int64() }
+    let mut i = s64
     while i < end {
-      rv.push(items[i])
-      i += step.to_int()
+      rv.push(items[i.to_int()])
+      if step > end - i {
+        break
+      }
+      i += step
     }
     rv
   } else {
-    range_step_backwards(start, stop, (-step).to_int(), items.length()).map(i => {
+    // `-step` would overflow for the minimum value
+    let magnitude = if step == -0x7FFFFFFFFFFFFFFFL - 1L {
+      0x7FFFFFFFFFFFFFFFL
+    } else {
+      -step
+    }
+    range_step_backwards(start, stop, magnitude, items.length()).map(i => {
       items[i]
     })
   }
@@ -1007,7 +1047,12 @@ fn value_slice(
           match obj.try_iter() {
             Some(iter) => {
               let vec = iter.to_array()
-              range_step_backwards(start, stop, (-step).to_int(), vec.length())
+              let magnitude = if step == -0x7FFFFFFFFFFFFFFFL - 1L {
+                0x7FFFFFFFFFFFFFFFL
+              } else {
+                -step
+              }
+              range_step_backwards(start, stop, magnitude, vec.length())
               .map(i => vec[i])
               .iter()
             }
