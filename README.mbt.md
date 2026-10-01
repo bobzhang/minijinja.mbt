@@ -184,7 +184,7 @@ test "errors" {
   match upstream).
 * `AutoEscape::None` is called `AutoEscape::NoEscape`, `ValueKind::None` is
   `ValueKind::Null`.
-* Not ported (yet): the `fuel` feature, `minijinja-contrib`, the CLI.
+* Not ported (yet): `minijinja-contrib` and the CLI.
 
 ## License
 
