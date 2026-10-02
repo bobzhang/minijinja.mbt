@@ -872,11 +872,8 @@ fn range_step_backwards(
   step : Int64,
   end : Int,
 ) -> Array[Int] {
-  // Upstream yields index 0 for empty sequences here and panics with an
-  // out of bounds access (`[][::-1]`); an empty slice is the sane result.
-  if end == 0 {
-    return []
-  }
+  // Note: like upstream this yields index 0 for empty sequences; the
+  // callers skip out of range indices where upstream panics (`[][::-1]`).
   let end64 = end.to_int64()
   let last = if end64 > 0L { end64 - 1L } else { 0L }
   let start = match start {
@@ -953,8 +950,8 @@ fn[T] slice_array(
     } else {
       -step
     }
-    range_step_backwards(start, stop, magnitude, items.length()).map(i => {
-      items[i]
+    range_step_backwards(start, stop, magnitude, items.length()).filter_map(i => {
+      items.get(i)
     })
   }
 }
@@ -1034,7 +1031,9 @@ fn value_slice(
             }
             Some((avail + step - 1) / step)
           }
-          None => None
+          // upstream treats an unknown length as 0, so only an empty slice
+          // has a known size
+          None => if len == 0 { Some(0) } else { None }
         }
         Value::make_iterable(() => {
           match obj.try_iter() {
@@ -1090,9 +1089,16 @@ fn value_slice(
               } else {
                 -step
               }
-              range_step_backwards(start, stop, magnitude, vec.length())
-              .map(i => vec[i])
-              .iter()
+              // the size is the number of indices (like upstream, which
+              // reports it without iterating), out of range ones are skipped
+              let indices = range_step_backwards(
+                start,
+                stop,
+                magnitude,
+                vec.length(),
+              )
+              let it = indices.iter().filter_map(i => vec.get(i))
+              Iter::new(() => it.next(), size_hint=indices.length())
             }
             None => Iter::empty()
           }

@@ -46,6 +46,12 @@ enum Stmt {
   Break(Ws)
   Continue(Ws)
   Do(Ws, Expr)
+  /// `include <expr> [ignore missing] [with context|without context]`
+  Include(Ws, Expr, Bool, String)
+  Extends(Ws, Expr)
+  Block(Ws, String, Array[Stmt])
+  Import(Ws, Expr, String)
+  FromImport(Ws, Expr, Array[(String, String?)])
 } derive(Debug)
 
 ///|
@@ -64,6 +70,8 @@ enum JVal {
 struct Case {
   name : String
   body : Array[Stmt]
+  /// Further templates available to `include`, `extends` and `import`.
+  extra : Array[(String, Array[Stmt])]
   ctx : Array[(String, JVal)]
   undefined : String
   trim_blocks : Bool
@@ -116,6 +124,52 @@ fn write_args(
 }
 
 ///|
+/// Writes `e` as the receiver of a postfix operation (`.attr`, `[...]`,
+/// call): filters, tests, operators and numbers need parentheses there.
+fn write_receiver(e : Expr, sb : StringBuilder) -> Unit {
+  let needs_parens = match e {
+    Filter(_, _, _, _)
+    | Test(_, _, _, _)
+    | Bin(_, _, _)
+    | Unary(_, _)
+    | Cond(_, _, _) => true
+    Lit(s) => s.length() > 0 && (s[0] == '-' || (s[0] >= '0' && s[0] <= '9'))
+    _ => false
+  }
+  if needs_parens {
+    sb.write_char('(')
+    e.write(sb)
+    sb.write_char(')')
+  } else {
+    e.write(sb)
+  }
+}
+
+///|
+/// Writes an operand of a binary or unary operator: `not` and conditional
+/// expressions need parentheses there.
+fn write_operand(e : Expr, sb : StringBuilder) -> Unit {
+  if e is (Unary("not", _) | Cond(_, _, _)) {
+    sb.write_char('(')
+    e.write(sb)
+    sb.write_char(')')
+  } else {
+    e.write(sb)
+  }
+}
+
+///|
+/// The source of an expression used inside a statement tag, where a bare
+/// conditional expression would be ambiguous.
+fn Expr::to_tag_source(self : Expr) -> String {
+  if self is Cond(_, _, _) {
+    "(\{self.to_source()})"
+  } else {
+    self.to_source()
+  }
+}
+
+///|
 fn Expr::write(self : Expr, sb : StringBuilder) -> Unit {
   match self {
     Lit(s) | Var(s) => sb.write_string(s)
@@ -161,16 +215,16 @@ fn Expr::write(self : Expr, sb : StringBuilder) -> Unit {
       sb.write_char(')')
     }
     Bin(op, a, b) => {
-      a.write(sb)
+      write_operand(a, sb)
       sb.write_string(" \{op} ")
-      b.write(sb)
+      write_operand(b, sb)
     }
     Unary(op, e) => {
       sb.write_string(op)
       if op == "not" {
         sb.write_char(' ')
       }
-      e.write(sb)
+      write_operand(e, sb)
     }
     Filter(e, name, args, kwargs) => {
       e.write(sb)
@@ -189,18 +243,18 @@ fn Expr::write(self : Expr, sb : StringBuilder) -> Unit {
       }
     }
     Attr(e, name) => {
-      e.write(sb)
+      write_receiver(e, sb)
       sb.write_char('.')
       sb.write_string(name)
     }
     Item(e, idx) => {
-      e.write(sb)
+      write_receiver(e, sb)
       sb.write_char('[')
       idx.write(sb)
       sb.write_char(']')
     }
     Slice(e, start, stop, step) => {
-      e.write(sb)
+      write_receiver(e, sb)
       sb.write_char('[')
       if start is Some(x) {
         x.write(sb)
@@ -216,7 +270,7 @@ fn Expr::write(self : Expr, sb : StringBuilder) -> Unit {
       sb.write_char(']')
     }
     Call(f, args, kwargs) => {
-      f.write(sb)
+      write_receiver(f, sb)
       write_args(sb, args, kwargs)
     }
     Cond(a, cond, other) => {
@@ -268,7 +322,7 @@ fn Stmt::write(self : Stmt, sb : StringBuilder) -> Unit {
         write_tag(
           sb,
           ws,
-          (if i == 0 { "if " } else { "elif " }) + branch.0.to_source(),
+          (if i == 0 { "if " } else { "elif " }) + branch.0.to_tag_source(),
         )
         write_body(sb, branch.1)
       } nobreak {
@@ -280,9 +334,9 @@ fn Stmt::write(self : Stmt, sb : StringBuilder) -> Unit {
       }
     For(ws, targets, iter, cond, body, else_body) => {
       let head = StringBuilder()
-      head.write_string("for \{targets.join(", ")} in \{iter.to_source()}")
+      head.write_string("for \{targets.join(", ")} in \{iter.to_tag_source()}")
       if cond is Some(c) {
-        head.write_string(" if \{c.to_source()}")
+        head.write_string(" if \{c.to_tag_source()}")
       }
       write_tag(sb, ws, head.to_string())
       write_body(sb, body)
@@ -311,7 +365,7 @@ fn Stmt::write(self : Stmt, sb : StringBuilder) -> Unit {
       write_tag(sb, ws, "endfilter")
     }
     Autoescape(ws, e, body) => {
-      write_tag(sb, ws, "autoescape \{e.to_source()}")
+      write_tag(sb, ws, "autoescape \{e.to_tag_source()}")
       write_body(sb, body)
       write_tag(sb, ws, "endautoescape")
     }
@@ -339,13 +393,44 @@ fn Stmt::write(self : Stmt, sb : StringBuilder) -> Unit {
     Break(ws) => write_tag(sb, ws, "break")
     Continue(ws) => write_tag(sb, ws, "continue")
     Do(ws, e) => write_tag(sb, ws, "do \{e.to_source()}")
+    Include(ws, e, ignore_missing, context) => {
+      let head = StringBuilder()
+      head.write_string("include \{e.to_source()}")
+      if ignore_missing {
+        head.write_string(" ignore missing")
+      }
+      head.write_string(context)
+      write_tag(sb, ws, head.to_string())
+    }
+    Extends(ws, e) => write_tag(sb, ws, "extends \{e.to_source()}")
+    Block(ws, name, body) => {
+      write_tag(sb, ws, "block \{name}")
+      write_body(sb, body)
+      write_tag(sb, ws, "endblock")
+    }
+    Import(ws, e, as_name) =>
+      write_tag(sb, ws, "import \{e.to_source()} as \{as_name}")
+    FromImport(ws, e, names) => {
+      let parts = names.map(n => {
+        match n.1 {
+          Some(as_name) => "\{n.0} as \{as_name}"
+          None => n.0
+        }
+      })
+      write_tag(sb, ws, "from \{e.to_source()} import \{parts.join(", ")}")
+    }
   }
 }
 
 ///|
 fn Case::source(self : Case) -> String {
+  body_source(self.body)
+}
+
+///|
+fn body_source(body : Array[Stmt]) -> String {
   let sb = StringBuilder()
-  write_body(sb, self.body)
+  write_body(sb, body)
   sb.to_string()
 }
 

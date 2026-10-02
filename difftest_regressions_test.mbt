@@ -138,3 +138,27 @@ test "difftest: usize arguments are 64 bit" {
     content="error: invalid operation: indent width is too large (in t.txt:1)",
   )
 }
+
+///|
+test "difftest: lazy reverse slices report their index range size" {
+  // like upstream the result reports its size without iterating, so a
+  // reverse slice of an empty list is truthy
+  inspect(dt_render("{% if [][::-10] %}T{% else %}F{% endif %}"), content="T")
+}
+
+///|
+test "difftest: slices of unknown length iterables are empty" {
+  inspect(
+    dt_render("{{ (nothing|zip)[:] }} {{ (nothing|zip)[1:] }}"),
+    content="[] []",
+  )
+}
+
+///|
+test "difftest: tuples render their items without pretty printing" {
+  inspect(dt_render("{{ ([1],)|pprint }}"), content="([1],)")
+  inspect(
+    dt_render("{{ [([1, 2], {'a': 1})]|pprint }}"),
+    content="[\n    ([1, 2], {'a': 1}),\n]",
+  )
+}

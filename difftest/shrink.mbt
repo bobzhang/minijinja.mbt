@@ -207,7 +207,8 @@ fn Stmt::children(self : Stmt) -> Array[Array[Stmt]] {
     | FilterBlock(_, _, body)
     | Autoescape(_, _, body)
     | Macro(_, _, _, body)
-    | CallBlock(_, _, _, body) => [body]
+    | CallBlock(_, _, _, body)
+    | Block(_, _, body) => [body]
     _ => []
   }
 }
@@ -312,6 +313,29 @@ fn shrink_stmt(s : Stmt) -> Array[Stmt] {
       }
     }
     Do(ws, e) => rv.append(shrink_expr(e).map(x => Stmt::Do(ws, x)))
+    Include(ws, e, ignore_missing, context) => {
+      if ignore_missing {
+        rv.push(Include(ws, e, false, context))
+      }
+      if context != "" {
+        rv.push(Include(ws, e, ignore_missing, ""))
+      }
+      rv.append(
+        shrink_expr(e).map(x => Stmt::Include(ws, x, ignore_missing, context)),
+      )
+    }
+    Extends(ws, e) => rv.append(shrink_expr(e).map(x => Stmt::Extends(ws, x)))
+    Block(ws, name, body) =>
+      for b in shrink_body(body) {
+        rv.push(Block(ws, name, b))
+      }
+    Import(_) => ()
+    FromImport(ws, e, names) =>
+      if names.length() > 1 {
+        for i in 0..<names.length() {
+          rv.push(FromImport(ws, e, removed(names, i)))
+        }
+      }
   }
   rv
 }
@@ -350,6 +374,12 @@ impl @quickcheck.Shrink for Case with fn shrink(self) {
   let rv : Array[Case] = []
   for body in shrink_body(self.body) {
     rv.push({ ..self, body, })
+  }
+  for i in 0..<self.extra.length() {
+    rv.push({ ..self, extra: removed(self.extra, i), })
+  }
+  for extra in shrink_each(self.extra, t => shrink_body(t.1).map(b => (t.0, b))) {
+    rv.push({ ..self, extra, })
   }
   for i in 0..<self.ctx.length() {
     rv.push({ ..self, ctx: removed(self.ctx, i), })

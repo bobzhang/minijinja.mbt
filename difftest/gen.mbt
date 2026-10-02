@@ -476,7 +476,7 @@ fn G::gen_expr(self : G, depth : Int) -> Expr {
         self.gen_expr(depth - 1),
         self.gen_expr(depth - 1),
       )
-    2 => Unary(self.choose(["not", "-", "+"]), self.gen_expr(depth - 1))
+    2 => Unary(self.choose(["not", "not", "-"]), self.gen_expr(depth - 1))
     3 => {
       let name = if self.chance(97) {
         self.choose(filter_names)
@@ -576,8 +576,8 @@ fn G::gen_ws(self : G) -> Ws {
 
 ///|
 let text_pool : Array[String] = [
-  "", " ", "\n", "  \n", "x", "Hello ", "\n\n", "\t", "a b", "<p>", "&", "}", "{",
-  "#", "%", "  ", "\n  ", "text\n", " - ", "é", "\r\n",
+  "", " ", "\n", "  \n", "x", "Hello ", "\n\n", "\t", "a b", "<p>", "&", "}", " {",
+  "# ", "% ", "  ", "\n  ", "text\n", " - ", "é", "\r\n", "x\n", " \n ", "<b>",
 ]
 
 ///|
@@ -619,7 +619,14 @@ fn G::gen_stmt(self : G, depth : Int) -> Stmt {
   let ws = self.gen_ws()
   match self.weighted(weights) {
     0 => Text(self.choose(text_pool))
-    1 => Emit(ws, self.gen_expr(3))
+    1 => {
+      // `+` is only valid on block tags (`{%+`), not on variable blocks
+      let ws : Ws = {
+        left: ws.left.replace_all(old="+", new=""),
+        right: ws.right.replace_all(old="+", new=""),
+      }
+      Emit(ws, self.gen_expr(3))
+    }
     2 => {
       let branches = Array::makei(self.pick(2) + 1, _ => {
         (self.gen_expr(2), self.gen_body(depth - 1))
@@ -743,7 +750,7 @@ fn G::gen_stmt(self : G, depth : Int) -> Stmt {
     11 => Comment(self.choose(["c", "", "{{ x }}", "multi\nline"]))
     12 => Raw(self.choose(["{{ x }}", "{% if %}", "plain", ""]))
     13 => if self.chance(50) { Break(ws) } else { Continue(ws) }
-    _ => Do(ws, self.gen_expr(2))
+    _ => Do(ws, self.gen_call(2))
   }
 }
 
@@ -841,6 +848,143 @@ fn G::gen_context(self : G) -> Array[(String, JVal)] {
 }
 
 ///|
+/// The name of an extra template, sometimes wrong or indirect.
+fn G::template_ref(self : G, name : String, ext : String) -> Expr {
+  match self.weighted([82, 7, 6, 5]) {
+    0 => Str(name)
+    1 => Str("missing" + ext)
+    2 => List([Str("missing" + ext), Str(name)])
+    _ => self.gen_var()
+  }
+}
+
+///|
+/// Generates a main template together with a base layout, an include
+/// partial and a macro library.
+fn G::gen_multi(
+  self : G,
+  ext : String,
+  depth : Int,
+) -> (Array[Stmt], Array[(String, Array[Stmt])]) {
+  let base = "base" + ext
+  let inc = "inc" + ext
+  let lib = "lib" + ext
+  // the macro library
+  let old_macros = self.macros.copy()
+  let lib_body : Array[Stmt] = [
+    Macro(
+      ws_none(),
+      "lm0",
+      [("p0", None), ("p1", Some(Lit("1")))],
+      self.with_scope(["p0", "p1", "varargs", "kwargs", "caller"], () => {
+        self.gen_body(depth - 1)
+      }),
+    ),
+    Set(ws_none(), ["lv"], self.gen_expr(2)),
+    Text(self.choose(text_pool)),
+  ]
+  if self.chance(50) {
+    lib_body.push(Macro(ws_none(), "lm1", [], self.gen_body(depth - 1)))
+  }
+  self.macros.clear()
+  self.macros.append(old_macros)
+  // the partial
+  let inc_body = self.gen_body(depth - 1)
+  // the layout
+  let base_body : Array[Stmt] = [
+    Text(self.choose(text_pool)),
+    Block(self.gen_ws(), "b0", self.gen_body(depth - 1)),
+    Text(self.choose(["|", "\n", " - ", ""])),
+    Block(self.gen_ws(), "b1", self.gen_body(depth - 1)),
+  ]
+  if self.chance(30) {
+    base_body.push(Emit(ws_none(), Call(Attr(Var("self"), "b0"), [], [])))
+  }
+  if self.chance(30) {
+    base_body.push(
+      Include(ws_none(), self.template_ref(inc, ext), self.chance(30), ""),
+    )
+  }
+  let extra = [(base, base_body), (inc, inc_body), (lib, lib_body)]
+  let main : Array[Stmt] = []
+  if self.chance(45) {
+    main.push(Extends(self.gen_ws(), self.template_ref(base, ext)))
+    if self.chance(30) {
+      main.push(Set(ws_none(), [self.fresh("v")], self.gen_expr(2)))
+    }
+    for name in ["b0", "b1"] {
+      if self.chance(70) {
+        let body = self.gen_body(depth - 1)
+        if self.chance(50) {
+          body.insert(
+            self.pick(body.length() + 1),
+            Emit(ws_none(), Call(Var("super"), [], [])),
+          )
+        }
+        main.push(Block(self.gen_ws(), name, body))
+      }
+    }
+    if self.chance(20) {
+      main.push(Text("ignored outside of blocks"))
+    }
+  } else {
+    let n = self.pick(4) + 1
+    for _ in 0..<n {
+      match self.weighted([30, 25, 20, 25]) {
+        0 =>
+          main.push(
+            Include(
+              self.gen_ws(),
+              self.template_ref(inc, ext),
+              self.chance(30),
+              self.choose(["", "", " with context", " without context"]),
+            ),
+          )
+        1 => {
+          main.push(Import(self.gen_ws(), self.template_ref(lib, ext), "lib"))
+          main.push(
+            Emit(
+              ws_none(),
+              if self.chance(70) {
+                Call(
+                  Attr(Var("lib"), self.choose(["lm0", "lm1", "lv", "nope"])),
+                  self.gen_exprs(self.pick(3), 1),
+                  [],
+                )
+              } else {
+                Attr(Var("lib"), self.choose(["lv", "lm0", "nope"]))
+              },
+            ),
+          )
+        }
+        2 => {
+          let names = if self.chance(50) {
+            [("lm0", None)]
+          } else {
+            [("lm0", Some("aliased")), ("lv", None)]
+          }
+          main.push(
+            FromImport(self.gen_ws(), self.template_ref(lib, ext), names),
+          )
+          let callee = match names[0].1 {
+            Some(as_name) => as_name
+            None => "lm0"
+          }
+          main.push(
+            Emit(
+              ws_none(),
+              Call(Var(callee), self.gen_exprs(self.pick(3), 1), []),
+            ),
+          )
+        }
+        _ => main.append(self.gen_body(depth - 1))
+      }
+    }
+  }
+  (main, extra)
+}
+
+///|
 fn gen_case(size : Int, rs : @splitmix.RandomState) -> Case {
   let g : G = {
     rs,
@@ -853,12 +997,19 @@ fn gen_case(size : Int, rs : @splitmix.RandomState) -> Case {
   }
   let ctx = g.gen_context()
   let depth = 2 + size / 40
-  let body = Array::makei(g.pick(4) + 1, _ => g.gen_stmt(depth))
+  let name = g.choose([
+    "t.txt", "t.txt", "t.html", "t.html", "t.json", "t.yaml", "t.xml",
+  ])
+  let ext = name.view(start_offset=1).to_owned()
+  let (body, extra) = if g.chance(30) {
+    g.gen_multi(ext, depth)
+  } else {
+    (Array::makei(g.pick(4) + 1, _ => g.gen_stmt(depth)), [])
+  }
   {
-    name: g.choose([
-      "t.txt", "t.txt", "t.html", "t.html", "t.json", "t.yaml", "t.xml",
-    ]),
+    name,
     body,
+    extra,
     ctx,
     undefined: g.choose([
       "lenient", "lenient", "lenient", "strict", "semi_strict", "chainable",

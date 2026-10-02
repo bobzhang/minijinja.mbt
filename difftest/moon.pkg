@@ -6,6 +6,7 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/env",
   "moonbitlang/core/string",
+  "moonbitlang/core/cmp",
 }
 
 supported_targets = "native"

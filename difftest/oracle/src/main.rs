@@ -10,6 +10,8 @@ use serde::Deserialize;
 struct Case {
     name: String,
     source: String,
+    #[serde(default)]
+    templates: Vec<(String, String)>,
     ctx: String,
     undefined: String,
     trim_blocks: bool,
@@ -42,6 +44,9 @@ fn run(case: &Case) -> Result<String, String> {
     // keep runaway templates bounded
     env.set_recursion_limit(100);
     let ctx: serde_json::Value = serde_json::from_str(&case.ctx).map_err(|e| e.to_string())?;
+    for (name, source) in &case.templates {
+        env.add_template(name, source).map_err(|e| format_err(&e))?;
+    }
     env.add_template(&case.name, &case.source)
         .map_err(|e| format_err(&e))?;
     let tmpl = env.get_template(&case.name).map_err(|e| format_err(&e))?;

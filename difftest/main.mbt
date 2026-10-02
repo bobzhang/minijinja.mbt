@@ -57,6 +57,9 @@ fn render_ours(c : Case) -> Outcome {
   env.set_recursion_limit(100)
   try {
     let ctx = @minijinja.Value::from_json_str(c.ctx_json())
+    for t in c.extra {
+      env.add_template(t.0, body_source(t.1))
+    }
     env.add_template(c.name, c.source())
     Rendered(env.get_template(c.name).render(ctx))
   } catch {
@@ -69,6 +72,11 @@ fn Case::request(self : Case) -> String {
   let j : Json = {
     "name": self.name.to_json(),
     "source": self.source().to_json(),
+    "templates": Json::array(
+      self.extra.map(t => {
+        Json::array([t.0.to_json(), body_source(t.1).to_json()])
+      }),
+    ),
     "ctx": self.ctx_json().to_json(),
     "undefined": self.undefined.to_json(),
     "trim_blocks": self.trim_blocks.to_json(),
@@ -114,6 +122,7 @@ fn Case::describe(self : Case) -> String {
   "name=\{self.name} undefined=\{self.undefined} trim_blocks=\{self.trim_blocks} " +
   "lstrip_blocks=\{self.lstrip_blocks} keep_trailing_newline=\{self.keep_trailing_newline}\n" +
   "ctx=\{self.ctx_json()}\n" +
+  self.extra.map(t => "--- \{t.0}\n\{body_source(t.1)}\n").join("") +
   "--- source\n\{self.source()}\n---"
 }
 
@@ -195,10 +204,28 @@ fn survey(
   let seen : Map[String, Int] = Map([])
   let mut mismatches = 0
   let mut crashes = 0
+  let mut rendered = 0
+  let mut multi = 0
+  let errors : Map[String, Int] = Map([])
   let mut reported = 0
   for i in 0..<count {
     let size = i % max_size
     let c = gen_case(size, rs)
+    if !c.extra.is_empty() {
+      multi += 1
+    }
+    match render_oracle(c) {
+      Rendered(_) => rendered += 1
+      Failed(msg) => {
+        let kind = if msg.has_prefix("syntax error") {
+          msg.split("(in").next().map_or("?", x => x.to_owned())
+        } else {
+          msg.split(":").next().map_or("?", x => x.to_owned())
+        }
+        errors[kind] = errors.get(kind).unwrap_or(0) + 1
+      }
+      Crashed(_) => ()
+    }
     if render_oracle(c) is Crashed(msg) {
       crashes += 1
       let small = shrink_while(c, 200, x => render_oracle(x) is Crashed(_))
@@ -224,6 +251,12 @@ fn survey(
       println("")
     }
   }
+  let top = errors.to_array()
+  top.sort_by((a, b) => b.1 - a.1)
+  println(
+    "outcomes: \{rendered} rendered (\{multi} cases with several templates); errors: " +
+    top[:@cmp.minimum(25, top.length())].map(e => "\{e.0} \{e.1}").join(", "),
+  )
   println(
     "survey: \{count} cases, \{mismatches} mismatches, \{seen.length()} distinct after shrinking, \{crashes} upstream crashes",
   )
@@ -266,6 +299,29 @@ fn main {
   }
   match mode {
     "check" => run_check(count, seed, max_size)
+    "syntax" => {
+      // shortest generated example per syntax error message (ours only)
+      let rs = @splitmix.new(seed~)
+      let examples : Map[String, String] = Map([])
+      for i in 0..<count {
+        let c = gen_case(i % max_size, rs)
+        if render_ours(c) is Failed(msg) && msg.has_prefix("syntax error") {
+          let key = msg.split("(in").next().map_or("?", x => x.to_owned())
+          // show the template the error is about
+          let src = match c.extra.search_by(t => msg.contains("(in \{t.0}:")) {
+            Some(i) => "[\{c.extra[i].0}] " + body_source(c.extra[i].1)
+            None => c.source()
+          }
+          match examples.get(key) {
+            Some(old) if old.length() <= src.length() => ()
+            _ => examples[key] = src
+          }
+        }
+      }
+      for k, v in examples {
+        println("== \{k}\n\{v}")
+      }
+    }
     "show" => {
       let rs = @splitmix.new(seed~)
       for i in 0..<count {

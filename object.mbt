@@ -410,7 +410,11 @@ fn DynObject::render(self : DynObject, f : @rfmt.Formatter) -> Unit {
         if idx != 0 {
           f.write_str(", ")
         }
-        value.fmt_debug(f)
+        // like upstream's `write!(f, "{value:?}")`: the elements are never
+        // pretty printed, even under `{:#?}`
+        let plain = @rfmt.Formatter::new()
+        value.fmt_debug(plain)
+        f.write_str(plain.to_string())
       }
       if items.length() == 1 {
         f.write_str(",")
