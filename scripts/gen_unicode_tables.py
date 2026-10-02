@@ -1,148 +1,165 @@
 #!/usr/bin/env python3
-"""Generates internal/unicode/tables.mbt from Python's unicodedata.
+"""Generates internal/unicode/tables.mbt from the Unicode Character Database.
 
-Rust's `unicode-ident` (XID_Start / XID_Continue), `char::is_uppercase`,
-`char::is_lowercase`, case folding (`unicase`) and the full case mappings used by `str::to_uppercase` /
-`str::to_lowercase` are approximated with the Unicode database shipped with
-the running Python interpreter.
+The tables follow the Unicode version used by Rust's standard library (and
+the `unicode-ident` crate) that upstream MiniJinja is built with, so that
+the port matches Rust's behavior:
 
-`char::is_alphabetic` (the derived `Alphabetic` property) cannot be computed
-from `unicodedata` alone (it needs `Other_Alphabetic`), so it is read from
-`DerivedCoreProperties.txt` of the same Unicode version.  The file is taken
-from `$UCD_DIR/DerivedCoreProperties.txt` when `UCD_DIR` is set and
-downloaded from unicode.org otherwise.
+* XID_Start / XID_Continue (`unicode-ident`), Uppercase / Lowercase / Cased /
+  Case_Ignorable / Alphabetic / Grapheme_Extend from DerivedCoreProperties.txt
+* White_Space from PropList.txt (`char::is_whitespace`)
+* general categories from UnicodeData.txt (letters, numbers and the
+  "printable" set of `char::escape_debug`)
+* full case mappings (`str::to_uppercase` / `str::to_lowercase`) from
+  UnicodeData.txt and the unconditional entries of SpecialCasing.txt
+* full case folding (C + F) from CaseFolding.txt
+
+The UCD files are read from `$UCD_DIR` when set and otherwise downloaded from
+unicode.org into `_build/ucd/<version>/`.
 """
 import os
 import sys
-import unicodedata
 import urllib.request
 
+UNICODE_VERSION = os.environ.get("UCD_VERSION", "16.0.0")
 MAX = 0x110000
+FILES = [
+    "UnicodeData.txt",
+    "SpecialCasing.txt",
+    "CaseFolding.txt",
+    "DerivedCoreProperties.txt",
+    "PropList.txt",
+]
 
 
-def ranges(pred):
+def ucd_dir():
+    d = os.environ.get("UCD_DIR") or os.path.join("_build", "ucd", UNICODE_VERSION)
+    os.makedirs(d, exist_ok=True)
+    for name in FILES:
+        path = os.path.join(d, name)
+        if not os.path.exists(path):
+            url = f"https://www.unicode.org/Public/{UNICODE_VERSION}/ucd/{name}"
+            print(f"downloading {url}", file=sys.stderr)
+            with urllib.request.urlopen(url) as f:
+                data = f.read()
+            with open(path, "wb") as f:
+                f.write(data)
+    return d
+
+
+def read_lines(d, name):
+    with open(os.path.join(d, name), encoding="utf-8") as f:
+        for line in f:
+            line = line.split("#", 1)[0].strip()
+            if line:
+                yield [x.strip() for x in line.split(";")]
+
+
+def parse_range(s):
+    if ".." in s:
+        a, b = s.split("..")
+        return range(int(a, 16), int(b, 16) + 1)
+    return range(int(s, 16), int(s, 16) + 1)
+
+
+def properties(d, name):
+    props = {}
+    for fields in read_lines(d, name):
+        props.setdefault(fields[1], set()).update(parse_range(fields[0]))
+    return props
+
+
+def unicode_data(d):
+    """General category and simple case mappings of every code point."""
+    category = {}
+    upper = {}
+    lower = {}
+    first = None
+    with open(os.path.join(d, "UnicodeData.txt"), encoding="utf-8") as f:
+        for line in f:
+            fields = line.rstrip("\n").split(";")
+            cp = int(fields[0], 16)
+            name, cat = fields[1], fields[2]
+            if name.endswith(", First>"):
+                first = cp
+                continue
+            if name.endswith(", Last>"):
+                for x in range(first, cp + 1):
+                    category[x] = cat
+                continue
+            category[cp] = cat
+            if fields[12]:
+                upper[cp] = [int(fields[12], 16)]
+            if fields[13]:
+                lower[cp] = [int(fields[13], 16)]
+    return category, upper, lower
+
+
+def special_casing(d, upper, lower):
+    """Applies the unconditional full mappings of SpecialCasing.txt."""
+    for fields in read_lines(d, "SpecialCasing.txt"):
+        # fields: code; lower; title; upper; (condition_list;)
+        if len(fields) > 4 and fields[4]:
+            continue  # conditional (language or context sensitive)
+        cp = int(fields[0], 16)
+        lo = [int(x, 16) for x in fields[1].split()]
+        up = [int(x, 16) for x in fields[3].split()]
+        if lo != [cp]:
+            lower[cp] = lo
+        else:
+            lower.pop(cp, None)
+        if up != [cp]:
+            upper[cp] = up
+        else:
+            upper.pop(cp, None)
+
+
+def case_folding(d):
+    fold = {}
+    for fields in read_lines(d, "CaseFolding.txt"):
+        status = fields[1]
+        if status in ("C", "F"):
+            fold[int(fields[0], 16)] = [int(x, 16) for x in fields[2].split()]
+    return fold
+
+
+def ranges(cps):
     out = []
     start = None
-    for cp in range(MAX):
+    prev = None
+    for cp in sorted(cps):
         if 0xD800 <= cp <= 0xDFFF:
-            ok = False
+            continue
+        if start is None:
+            start = prev = cp
+        elif cp == prev + 1:
+            prev = cp
         else:
-            ok = pred(cp)
-        if ok and start is None:
-            start = cp
-        elif not ok and start is not None:
-            out.append((start, cp - 1))
-            start = None
+            out.append((start, prev))
+            start = prev = cp
     if start is not None:
-        out.append((start, MAX - 1))
+        out.append((start, prev))
     return out
 
 
-def xid_start(cp):
-    c = chr(cp)
-    return c.isidentifier() and c != "_"
-
-
-def xid_continue(cp):
-    c = chr(cp)
-    return ("a" + c).isidentifier()
-
-
-def uppercase(cp):
-    # CPython derives `isupper` for a single character from the Uppercase
-    # property, which is what Rust's `char::is_uppercase` uses.
-    return chr(cp).isupper()
-
-
-def lowercase(cp):
-    return chr(cp).islower()
-
-
-def cased(cp):
-    c = chr(cp)
-    return c.isupper() or c.islower() or unicodedata.category(c) == "Lt"
-
-
-# Word_Break=MidLetter/MidNumLet/Single_Quote characters (part of Case_Ignorable)
-WORD_BREAK_MID = set(
-    "\u0027\u002e\u003a\u00b7\u0387\u055f\u05f4\u2018\u2019\u2024\u2027"
-    "\ufe13\ufe52\ufe55\uff07\uff0e\uff1a"
-)
-
-
-def case_ignorable(cp):
-    c = chr(cp)
-    return unicodedata.category(c) in ("Mn", "Me", "Cf", "Lm", "Sk") or c in WORD_BREAK_MID
-
-
-def letter(cp):
-    # unicode_categories' `is_letter`: general category L*.
-    return unicodedata.category(chr(cp)) in ("Lu", "Ll", "Lt", "Lm", "Lo")
-
-
-def numeric(cp):
-    # Rust's `char::is_numeric`: general category Nd, Nl or No.
-    return unicodedata.category(chr(cp)) in ("Nd", "Nl", "No")
-
-
-def white_space(cp):
-    # Rust's `char::is_whitespace` (the White_Space property).  CPython's
-    # `isspace` additionally treats U+001C..U+001F (bidi class B/S) as
-    # whitespace, which White_Space does not.
-    return chr(cp).isspace() and not (0x1C <= cp <= 0x1F)
-
-
-def derived_core_property(prop):
-    version = unicodedata.unidata_version
-    ucd_dir = os.environ.get("UCD_DIR")
-    if ucd_dir:
-        with open(os.path.join(ucd_dir, "DerivedCoreProperties.txt"), encoding="utf-8") as f:
-            data = f.read()
-    else:
-        url = f"https://www.unicode.org/Public/{version}/ucd/DerivedCoreProperties.txt"
-        with urllib.request.urlopen(url) as f:
-            data = f.read().decode("utf-8")
-    first = data.splitlines()[0]
-    if version not in first:
-        raise SystemExit(f"DerivedCoreProperties.txt version mismatch: {first!r} vs {version}")
-    cps = set()
-    for line in data.splitlines():
-        line = line.split("#", 1)[0].strip()
-        if not line:
-            continue
-        fields = [x.strip() for x in line.split(";")]
-        rng, name = fields[0], fields[1]
-        if name != prop:
-            continue
-        if ".." in rng:
-            a, b = rng.split("..")
-            cps.update(range(int(a, 16), int(b, 16) + 1))
-        else:
-            cps.add(int(rng, 16))
-    return cps
-
-
-def emit_ranges(out, name, rs):
+def emit_ranges(out, name, cps):
     out.append("///|")
     out.append(f"let {name} : FixedArray[Int] = [")
-    for a, b in rs:
+    for a, b in ranges(cps):
         out.append(f"  0x{a:x}, 0x{b:x},")
     out.append("]")
     out.append("")
 
 
-def emit_mapping(out, name, fn):
+def emit_mapping(out, name, mapping):
     single = []
     multi = []
-    for cp in range(MAX):
-        if 0xD800 <= cp <= 0xDFFF:
-            continue
-        c = chr(cp)
-        m = fn(c)
-        if m == c:
+    for cp in sorted(mapping):
+        m = mapping[cp]
+        if m == [cp]:
             continue
         if len(m) == 1:
-            single.append((cp, ord(m)))
+            single.append((cp, m[0]))
         else:
             multi.append((cp, m))
     out.append("///|")
@@ -160,34 +177,56 @@ def emit_mapping(out, name, fn):
     out.append("///|")
     out.append(f"let {name}_multi_values : FixedArray[String] = [")
     for _, m in multi:
-        esc = "".join(f"\\u{{{ord(ch):x}}}" for ch in m)
+        esc = "".join(f"\\u{{{x:x}}}" for x in m)
         out.append(f'  "{esc}",')
     out.append("]")
     out.append("")
 
 
 def main():
+    d = ucd_dir()
+    category, upper, lower = unicode_data(d)
+    special_casing(d, upper, lower)
+    fold = case_folding(d)
+    derived = properties(d, "DerivedCoreProperties.txt")
+    proplist = properties(d, "PropList.txt")
+
+    def by_category(cats):
+        return {cp for cp, cat in category.items() if cat in cats}
+
+    # Rust's `core::unicode::printable`: everything except these categories
+    # (unassigned code points are Cn) is printable, plus the space.
+    non_printable_cats = {"Cc", "Cf", "Cs", "Co", "Zl", "Zp", "Zs"}
+    printable = {
+        cp
+        for cp in range(MAX)
+        if cp in category and category[cp] not in non_printable_cats
+    }
+    printable.add(0x20)
+
     out = [
         "// Code generated by scripts/gen_unicode_tables.py; DO NOT EDIT.",
-        f"// Unicode version: {unicodedata.unidata_version}",
+        f"// Unicode version: {UNICODE_VERSION}",
         "",
     ]
-    emit_ranges(out, "xid_start_table", ranges(xid_start))
-    emit_ranges(out, "xid_continue_table", ranges(xid_continue))
-    emit_ranges(out, "uppercase_table", ranges(uppercase))
-    emit_ranges(out, "lowercase_table", ranges(lowercase))
-    emit_ranges(out, "cased_table", ranges(cased))
-    emit_ranges(out, "case_ignorable_table", ranges(case_ignorable))
-    alphabetic = derived_core_property("Alphabetic")
-    emit_ranges(out, "alphabetic_table", ranges(lambda cp: cp in alphabetic))
-    emit_ranges(out, "letter_table", ranges(letter))
-    emit_ranges(out, "numeric_table", ranges(numeric))
-    emit_ranges(out, "white_space_table", ranges(white_space))
-    emit_mapping(out, "upper", lambda c: c.upper())
-    # Python lowercases U+0130 to "i̇" like Rust; final sigma is handled
-    # by the caller.
-    emit_mapping(out, "lower", lambda c: c.lower())
-    emit_mapping(out, "fold", lambda c: c.casefold())
+    emit_ranges(out, "xid_start_table", derived["XID_Start"])
+    emit_ranges(out, "xid_continue_table", derived["XID_Continue"])
+    emit_ranges(out, "uppercase_table", derived["Uppercase"])
+    emit_ranges(out, "lowercase_table", derived["Lowercase"])
+    emit_ranges(out, "cased_table", derived["Cased"])
+    emit_ranges(out, "case_ignorable_table", derived["Case_Ignorable"])
+    emit_ranges(out, "alphabetic_table", derived["Alphabetic"])
+    emit_ranges(out, "grapheme_extend_table", derived["Grapheme_Extend"])
+    # unicode_categories' `is_letter`: general category L*
+    emit_ranges(out, "letter_table", by_category({"Lu", "Ll", "Lt", "Lm", "Lo"}))
+    # Rust's `char::is_numeric`: general category Nd, Nl or No
+    emit_ranges(out, "numeric_table", by_category({"Nd", "Nl", "No"}))
+    emit_ranges(out, "white_space_table", proplist["White_Space"])
+    emit_ranges(out, "printable_table", printable)
+    emit_mapping(out, "upper", upper)
+    # U+0130 lowercases to "i̇" like Rust; final sigma is handled by the caller
+    emit_mapping(out, "lower", lower)
+    emit_mapping(out, "fold", fold)
     path = sys.argv[1] if len(sys.argv) > 1 else "internal/unicode/tables.mbt"
     with open(path, "w") as f:
         f.write("\n".join(out))

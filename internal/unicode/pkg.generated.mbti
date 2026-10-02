@@ -16,11 +16,15 @@ pub fn is_case_ignorable(Char) -> Bool
 
 pub fn is_cased(Char) -> Bool
 
+pub fn is_grapheme_extended(Char) -> Bool
+
 pub fn is_letter(Char) -> Bool
 
 pub fn is_lowercase(Char) -> Bool
 
 pub fn is_numeric(Char) -> Bool
+
+pub fn is_printable(Char) -> Bool
 
 pub fn is_uppercase(Char) -> Bool
 

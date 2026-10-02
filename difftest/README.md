@@ -28,6 +28,15 @@ Modes (`difftest -- <mode> [count] [seed] [max_size]`):
 * `check`: runs `@quickcheck.check` with shrinking and stops at the first
   counterexample.
 * `show`: prints generated templates.
+* `syntax`: prints the shortest generated example per syntax error message.
+* `unicode`: dumps the port's Unicode tables for every code point; compare
+  with the oracle's `unicode_ref` binary:
+
+  ```bash
+  cargo build --release --manifest-path difftest/oracle/Cargo.toml
+  diff <(difftest/oracle/target/release/unicode_ref) \
+       <(moon run --target native --release difftest -- unicode)
+  ```
 
 ## Known upstream differences
 

@@ -75,3 +75,23 @@ pub fn trim_end(s : StringView) -> StringView {
   }
   view
 }
+
+///|
+/// Port of `char::is_grapheme_extended` (the Grapheme_Extend property).
+pub fn is_grapheme_extended(c : Char) -> Bool {
+  let cp = c.to_int()
+  cp >= 0x300 && in_ranges(grapheme_extend_table, cp)
+}
+
+///|
+/// Port of `core::unicode::printable::is_printable`: everything except
+/// control, format, surrogate, private use, unassigned and separator
+/// characters (the space excepted) prints verbatim in `escape_debug`.
+pub fn is_printable(c : Char) -> Bool {
+  let cp = c.to_int()
+  if cp >= 0x20 && cp < 0x7f {
+    true
+  } else {
+    in_ranges(printable_table, cp)
+  }
+}

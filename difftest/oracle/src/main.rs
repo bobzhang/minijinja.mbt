@@ -17,6 +17,8 @@ struct Case {
     trim_blocks: bool,
     lstrip_blocks: bool,
     keep_trailing_newline: bool,
+    #[serde(default)]
+    contrib: bool,
 }
 
 fn format_err(err: &minijinja::Error) -> String {
@@ -43,6 +45,10 @@ fn run(case: &Case) -> Result<String, String> {
     env.set_keep_trailing_newline(case.keep_trailing_newline);
     // keep runaway templates bounded
     env.set_recursion_limit(100);
+    if case.contrib {
+        minijinja_contrib::add_to_environment(&mut env);
+        env.set_unknown_method_callback(minijinja_contrib::pycompat::unknown_method_callback);
+    }
     let ctx: serde_json::Value = serde_json::from_str(&case.ctx).map_err(|e| e.to_string())?;
     for (name, source) in &case.templates {
         env.add_template(name, source).map_err(|e| format_err(&e))?;

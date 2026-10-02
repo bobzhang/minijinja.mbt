@@ -280,8 +280,50 @@ fn run_check(count : Int, seed : UInt64, max_size : Int) -> Unit {
 }
 
 ///|
+/// Prints the port's view of every code point in the format of the
+/// oracle's `unicode_ref` binary.
+fn dump_unicode() -> Unit {
+  let sb = StringBuilder()
+  let hexes = (s : String) => {
+    s.iter().map(c => c.to_int().to_string(radix=16)).collect().join(" ")
+  }
+  let b = (x : Bool) => if x { "1" } else { "0" }
+  for cp in 0..<0x110000 {
+    if cp >= 0xD800 && cp <= 0xDFFF {
+      continue
+    }
+    let c = cp.unsafe_to_char()
+    let s = c.to_string()
+    sb.write_string(cp.to_string(radix=16))
+    sb.write_char(';')
+    sb.write_string(hexes(@unicode.to_upper(s)))
+    sb.write_char(';')
+    sb.write_string(hexes(@unicode.to_lower(s)))
+    sb.write_char(';')
+    sb.write_string(b(@unicode.is_alphabetic(c)))
+    sb.write_string(b(@unicode.is_whitespace(c)))
+    sb.write_string(b(@unicode.is_numeric(c)))
+    sb.write_string(b(@unicode.is_uppercase(c)))
+    sb.write_string(b(@unicode.is_lowercase(c)))
+    sb.write_string(b(@unicode.is_xid_start(c)))
+    sb.write_string(b(@unicode.is_xid_continue(c)))
+    sb.write_string(b(@unicode.is_alphanumeric(c)))
+    sb.write_string(b(c == '_' || @unicode.is_xid_start(c)))
+    sb.write_char(';')
+    sb.write_string(@rfmt.str_debug(s))
+    sb.write_char('\n')
+  }
+  let out = sb.to_string()
+  println(out.view(end_offset=out.length() - 1))
+}
+
+///|
 fn main {
   let args = @env.args()
+  if args.get(1) == Some("unicode") {
+    dump_unicode()
+    return
+  }
   let arg = (i : Int, default : String) => args.get(i).unwrap_or(default)
   let mode = arg(1, "survey")
   let count = @string.parse_int(arg(2, "1000")) catch { _ => 1000 }

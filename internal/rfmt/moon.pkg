@@ -1,3 +1,4 @@
 import {
   "moonbitlang/core/string",
+  "bobzhang/minijinja/internal/unicode",
 }

@@ -14,7 +14,15 @@ minijinja = { path = "../../.repos/minijinja/minijinja", features = [
   "urlencode",
   "unicode",
 ] }
+# matches what contrib/ ports: no datetime, no full html entity table
+minijinja-contrib = { path = "../../.repos/minijinja/minijinja-contrib", features = [
+  "pycompat",
+  "rand",
+  "wordcount",
+  "wordwrap",
+] }
 serde = { version = "1", features = ["derive"] }
+unicode-ident = "1.0.5"
 serde_json = { version = "1", features = ["preserve_order"] }
 
 [workspace]

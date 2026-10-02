@@ -12,8 +12,6 @@ pub fn format_exp_parts(Double, Int) -> (String, Int)
 
 pub fn format_fixed(Double, Int) -> String
 
-pub fn is_printable(Char) -> Bool
-
 pub fn round_digits(String, Int, Int) -> (String, Int)
 
 pub fn str_debug(StringView) -> String

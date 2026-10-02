@@ -247,6 +247,9 @@ test "errors" {
 * Maps keep their insertion order (like the `preserve_order` feature).
 * Spans and `TemplateError::range` use UTF-16 offsets (lines and columns
   match upstream).
+* Unicode tables (case mapping, identifiers, character classes, `Debug`
+  escaping) are generated from Unicode 16.0, the version of Rust 1.89's
+  standard library; they are checked against Rust for every code point.
 * `AutoEscape::None` is called `AutoEscape::NoEscape`, `ValueKind::None` is
   `ValueKind::Null`.
 * Not ported: the `datetime` feature of `minijinja-contrib`, and parts of

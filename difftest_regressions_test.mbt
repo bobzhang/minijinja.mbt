@@ -162,3 +162,17 @@ test "difftest: tuples render their items without pretty printing" {
     content="[\n    ([1, 2], {'a': 1}),\n]",
   )
 }
+
+///|
+test "difftest: debug escaping follows Rust's escape_debug" {
+  // grapheme extending and non printable characters are escaped like
+  // `format!("{:?}", s)` (Unicode 16.0 tables)
+  inspect(
+    dt_render("{% extends 'a\u{301}' %}"),
+    content="error: template not found: template \"a\\u{301}\" does not exist (in t.txt:1)",
+  )
+  inspect(
+    dt_render("{% extends '\u{200b}\u{a0}x' %}"),
+    content="error: template not found: template \"\\u{200b}\\u{a0}x\" does not exist (in t.txt:1)",
+  )
+}
