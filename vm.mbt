@@ -673,10 +673,7 @@ fn do_eval(
         }
       }
     } catch {
-      err => {
-        process_err(err, pc, state)
-        raise err
-      }
+      err => raise processed_err(err, pc, state)
     }
     match jump {
       Some(-1) => break // Return
@@ -1040,6 +1037,13 @@ fn build_macro(
       caller_reference: (flags & MACRO_CALLER) != 0,
     }),
   )
+}
+
+///|
+/// Attaches the location and debug info to `err` and returns it.
+fn processed_err(err : TemplateError, pc : Int, state : State) -> TemplateError {
+  process_err(err, pc, state)
+  err
 }
 
 ///|

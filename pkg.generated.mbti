@@ -245,8 +245,10 @@ pub(all) struct Span {
   end_line : Int
   end_col : Int
   end_offset : Int
-} derive(Default, Eq)
+} derive(Eq)
+pub fn Span::default() -> Self
 pub fn Span::to_string(Self) -> String
+pub impl Default for Span
 pub impl Show for Span
 
 pub struct State {
@@ -395,7 +397,7 @@ pub(all) enum ValueKind {
 pub fn ValueKind::to_string(Self) -> String
 pub impl Show for ValueKind
 
-type WhitespaceConfig derive(Default)
+type WhitespaceConfig
 
 // Type aliases
 pub type FormatterFunc = (Output, State, Value) -> Unit raise TemplateError

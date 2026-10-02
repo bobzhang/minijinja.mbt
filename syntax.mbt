@@ -149,4 +149,9 @@ struct WhitespaceConfig {
   keep_trailing_newline : Bool
   lstrip_blocks : Bool
   trim_blocks : Bool
-} derive(Default)
+}
+
+///|
+fn WhitespaceConfig::default() -> WhitespaceConfig {
+  { keep_trailing_newline: false, lstrip_blocks: false, trim_blocks: false, }
+}

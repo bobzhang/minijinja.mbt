@@ -43,19 +43,6 @@ let bench_all_elements_src : String =
   #|
 
 ///|
-let bench_footer_src : String =
-  #|Copyright {{ copyright }}!
-
-///|
-let bench_map_items_src : String =
-  #|ID,NAME
-  #|
-  #|{% for id, name in employees | items %}
-  #|{{id}},{{name}}
-  #|{% endfor %}
-  #|
-
-///|
 test "bench: compile phases" (b : @bench.T) {
   let src = bench_all_elements_src
   b.bench(name="lex", () => {

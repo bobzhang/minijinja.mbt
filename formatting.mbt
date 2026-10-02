@@ -31,7 +31,7 @@ priv enum Align {
   Left
   Right
   Center
-} derive(Eq)
+}
 
 ///|
 priv struct FillAlign {

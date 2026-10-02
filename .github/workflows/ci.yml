@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - run: moon version --all
+      - run: moon update
+      - name: moon fmt
+        run: moon fmt --check
+      - name: moon info (public API is up to date)
+        run: |
+          moon info --target native
+          git diff --exit-code -- '*.mbti'
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        target: [native, wasm]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - run: moon version --all
+      - run: moon update
+      - name: moon check
+        run: moon check --target ${{ matrix.target }} --deny-warn
+      - name: moon test
+        run: moon test --target ${{ matrix.target }} --deny-warn
+
+  # The snapshot corpus and the CLI need file IO and only run on native and
+  # wasm; the remaining unit tests also run on wasm-gc and js.
+  test-gc-backends:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [wasm-gc, js]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - run: moon update
+      - name: moon check
+        run: moon check --target ${{ matrix.target }}
+      - name: moon test
+        run: moon test --target ${{ matrix.target }}

@@ -29,7 +29,7 @@ priv enum Whitespace {
   Default
   Preserve
   Remove
-} derive(Eq)
+}
 
 ///|
 fn Whitespace::from_unit(u : Int) -> Whitespace {

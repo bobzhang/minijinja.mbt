@@ -243,7 +243,7 @@ pub fn Value::cmp(self : Value, other : Value) -> Int {
   if small_int(self) is Some(a) && small_int(other) is Some(b) {
     return compare_int64(a, b)
   }
-  let kind_ordering = self.kind().compare(other.kind())
+  let kind_ordering = Compare::compare(self.kind(), other.kind())
   if kind_ordering != 0 {
     return if kind_ordering < 0 { -1 } else { 1 }
   }
@@ -359,8 +359,8 @@ pub impl Hash for Value with fn hash_combine(self, hasher) {
       hasher.combine_bool(self.is_tuple())
       if o.try_iter_pairs() is Some(iter) {
         for pair in iter {
-          pair.0.hash_combine(hasher)
-          pair.1.hash_combine(hasher)
+          Hash::hash_combine(pair.0, hasher)
+          Hash::hash_combine(pair.1, hasher)
         }
       }
     }

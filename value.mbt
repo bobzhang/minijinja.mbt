@@ -51,13 +51,13 @@ pub impl Show for ValueKind with fn output(self, logger) {
 priv enum UndefinedType {
   Default
   Silent
-} derive(Eq)
+}
 
 ///|
 priv enum StringType {
   Normal
   Safe
-} derive(Eq)
+}
 
 ///|
 /// Represents a dynamically typed value in the template engine.
@@ -379,15 +379,6 @@ pub fn Value::as_object(self : Value) -> DynObject? {
 }
 
 ///|
-/// Returns the error of an invalid value.
-fn Value::as_error(self : Value) -> TemplateError? {
-  match self {
-    Invalid(e) => Some(e)
-    _ => None
-  }
-}
-
-///|
 /// Returns the length of the contained value.
 ///
 /// Strings return the number of Unicode scalar values, bytes the number of
@@ -666,37 +657,48 @@ pub fn Value::call_method(
       _ => raise TemplateError::from_kind(UnknownMethod)
     }
   } catch {
-    err => {
-      let mut err = err
-      if err.kind() == UnknownMethod {
-        if state.env().unknown_method_callback is Some(callback) {
-          let res = try callback(state, self, name, args) catch {
-            callback_err => {
-              if callback_err.kind() != UnknownMethod {
-                raise callback_err
-              }
-              err = callback_err
-              Value::undefined()
-            }
-          } noraise {
-            result => return result
-          }
-          ignore(res)
-        }
-        // Calling values stored on objects by using method syntax is
-        // supported as a fallback.
-        if self.as_object() is Some(obj) &&
-          obj.get_value(Value::from_string(name)) is Some(value) {
-          return value.call(state, args)
-        }
-        if err.detail() is None {
-          err.set_detail("\{self.kind()} has no method named \{name}")
-        }
-      }
-      raise err
-    }
+    err => self.call_method_fallback(state, name, args, err)
   }
   rv
+}
+
+///|
+/// Handles a failed method call: tries the unknown method callback and
+/// attribute fallback, then raises `err` with a helpful message.
+fn Value::call_method_fallback(
+  self : Value,
+  state : State,
+  name : String,
+  args : Array[Value],
+  err : TemplateError,
+) -> Value raise TemplateError {
+  let mut err = err
+  if err.kind() == UnknownMethod {
+    if state.env().unknown_method_callback is Some(callback) {
+      let res = try callback(state, self, name, args) catch {
+        callback_err => {
+          if callback_err.kind() != UnknownMethod {
+            raise callback_err
+          }
+          err = callback_err
+          Value::undefined()
+        }
+      } noraise {
+        result => return result
+      }
+      ignore(res)
+    }
+    // Calling values stored on objects by using method syntax is
+    // supported as a fallback.
+    if self.as_object() is Some(obj) &&
+      obj.get_value(Value::from_string(name)) is Some(value) {
+      return value.call(state, args)
+    }
+    if err.detail() is None {
+      err.set_detail("\{self.kind()} has no method named \{name}")
+    }
+  }
+  raise err
 }
 
 ///|

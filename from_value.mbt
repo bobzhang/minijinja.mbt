@@ -136,12 +136,7 @@ pub fn[T : FromValue] Kwargs::get_as(
   key : String,
 ) -> T raise TemplateError {
   let rv = T::from_value(self.values.get(Value::from_string(key))) catch {
-    err => {
-      if err.kind() == MissingArgument && err.detail() is None {
-        err.set_detail("missing keyword argument '\{key}'")
-      }
-      raise err
-    }
+    err => raise with_missing_kwarg_detail(err, key)
   }
   self.used.add(key)
   rv
@@ -151,4 +146,15 @@ pub fn[T : FromValue] Kwargs::get_as(
 /// Converts a value into `T`.
 pub fn[T : FromValue] Value::convert(self : Value) -> T raise TemplateError {
   T::from_value(Some(self))
+}
+
+///|
+fn with_missing_kwarg_detail(
+  err : TemplateError,
+  key : String,
+) -> TemplateError {
+  if err.kind() == MissingArgument && err.detail() is None {
+    err.set_detail("missing keyword argument '\{key}'")
+  }
+  err
 }

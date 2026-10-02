@@ -1434,7 +1434,8 @@ struct Opaque {
 }
 
 ///|
-impl @minijinja.Object for Opaque with fn repr(_self) {
+impl @minijinja.Object for Opaque with fn repr(self) {
+  ignore(self.n)
   Plain
 }
 

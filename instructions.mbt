@@ -413,35 +413,3 @@ fn Instructions::get_referenced_names(
   }
   rv
 }
-
-///|
-fn Instructions::debug_string(self : Instructions) -> String {
-  let f = @rfmt.Formatter::new(alternate=true)
-  self.fmt_debug(f)
-  f.to_string()
-}
-
-///|
-fn Instructions::fmt_debug(self : Instructions, f : @rfmt.Formatter) -> Unit {
-  let l = f.debug_list()
-  let mut last_line : Int? = None
-  for idx, instr in self.instructions {
-    let line = self.get_line(idx)
-    let idx_str = idx.to_string()
-    let padded = "0".repeat(
-        if idx_str.length() < 5 {
-          5 - idx_str.length()
-        } else {
-          0
-        },
-      ) +
-      idx_str
-    let mut entry = "\{padded} | \{instr.debug_string()}"
-    if line != last_line && line is Some(line) {
-      entry = entry + "  [line \{line}]"
-    }
-    l.entry(f => f.write_str(entry)) |> ignore
-    last_line = line
-  }
-  l.finish()
-}

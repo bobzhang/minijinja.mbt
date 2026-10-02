@@ -544,14 +544,6 @@ fn value_to_json_with_style(
 }
 
 ///|
-/// Serializes a value to compact JSON (used by the JSON auto escape mode).
-fn value_to_json_string(value : Value, spaced : Bool) -> String {
-  value_to_json_with_style(value, if spaced { Spaced } else { Compact }) catch {
-    _ => "null"
-  }
-}
-
-///|
 /// Serializes the value to JSON.  With `indent` the output is pretty
 /// printed.
 pub fn Value::to_json_string(

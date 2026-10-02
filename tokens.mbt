@@ -11,7 +11,25 @@ pub(all) struct Span {
   end_line : Int
   end_col : Int
   end_offset : Int
-} derive(Eq, Default)
+} derive(Eq)
+
+///|
+/// Returns an empty span (all positions zero).
+pub fn Span::default() -> Span {
+  {
+    start_line: 0,
+    start_col: 0,
+    start_offset: 0,
+    end_line: 0,
+    end_col: 0,
+    end_offset: 0,
+  }
+}
+
+///|
+pub impl Default for Span with fn default() {
+  Span::default()
+}
 
 ///|
 /// Formats the span like MiniJinja's `Debug` for `Span` (` @ 1:0-1:5`).
