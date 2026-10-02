@@ -192,7 +192,7 @@ That makes namespace assignment and loop-recursion dispatch explicit. Arbitrary 
 
 Give each object handle an explicit stable identity, preserved when a `Value` is copied. This supports `sameas` and the identity fast paths in equality.
 
-Do **not** implement semantic identity using MoonBit’s `physical_equal`: the installed core explicitly documents it as an optimization hint whose result may vary by backend and optimization settings. See [intrinsics.mbt](/Users/hongbozhang/.moon/lib/core/builtin/intrinsics.mbt:39).
+Do **not** implement semantic identity using MoonBit’s `physical_equal`: the installed core explicitly documents it as an optimization hint whose result may vary by backend and optimization settings. See [intrinsics.mbt](moonbitlang/core: builtin/intrinsics.mbt:39).
 
 ### Enumeration, tuples, and kwargs
 
@@ -592,7 +592,7 @@ In `Value::Display`:
 
 Containers use the debug representation of contained floats, which can use exponent notation.
 
-MoonBit’s installed formatter explicitly follows ECMAScript formatting policy and converts negative zero to `"0"`; see [double_ryu_nonjs.mbt](/Users/hongbozhang/.moon/lib/core/builtin/double_ryu_nonjs.mbt:668). Simply appending `.0` to `Double::to_string()` is insufficient.
+MoonBit’s installed formatter explicitly follows ECMAScript formatting policy and converts negative zero to `"0"`; see [double_ryu_nonjs.mbt](moonbitlang/core: builtin/double_ryu_nonjs.mbt:668). Simply appending `.0` to `Double::to_string()` is insufficient.
 
 A practical implementation plan:
 
@@ -653,7 +653,7 @@ This is a major harness risk.
 
 The last two must produce floats.
 
-The installed MoonBit JSON representation has `Number(Double, repr?)`, but its parser retains the source representation only in selected cases. It does not preserve ordinary integer-versus-float spelling reliably. See [lex_number.mbt](/Users/hongbozhang/.moon/lib/core/json/lex_number.mbt:211).
+The installed MoonBit JSON representation has `Number(Double, repr?)`, but its parser retains the source representation only in selected cases. It does not preserve ordinary integer-versus-float spelling reliably. See [lex_number.mbt](moonbitlang/core: json/lex_number.mbt:211).
 
 Choose either:
 
