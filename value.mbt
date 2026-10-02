@@ -526,9 +526,14 @@ pub fn Value::try_iter(self : Value) -> Iter[Value] raise TemplateError {
   match self {
     NoneValue | Undefined(_) => Iter::empty()
     Str(s, _) => {
+      // Like Rust's `Chars` the size hint is only exact for empty strings,
+      // so loops over strings do not know their length (`loop.length` is
+      // undefined, `loop.last` is false).
+      if s.is_empty() {
+        return Iter::empty()
+      }
       let chars = s.iter()
-      let len = scalar_count(s)
-      Iter::new(() => chars.next().map(Value::from_char), size_hint=len)
+      Iter::new(() => chars.next().map(Value::from_char))
     }
     Object(obj) =>
       match obj.try_iter() {

@@ -872,6 +872,11 @@ fn range_step_backwards(
   step : Int64,
   end : Int,
 ) -> Array[Int] {
+  // Upstream yields index 0 for empty sequences here and panics with an
+  // out of bounds access (`[][::-1]`); an empty slice is the sane result.
+  if end == 0 {
+    return []
+  }
   let end64 = end.to_int64()
   let last = if end64 > 0L { end64 - 1L } else { 0L }
   let start = match start {

@@ -84,3 +84,23 @@ test "difftest: JSON serialization errors carry a plain cause" {
     content="error: could not serialize to value: unable to format to JSON (in t.json:1) / caused by: key must be a string",
   )
 }
+
+///|
+test "difftest: loops over strings have no known length" {
+  inspect(
+    dt_render(
+      "{% for c in 'ab' %}{{ loop }} {{ loop.length is undefined }} {{ loop.last }} {% endfor %}{% for c in '' %}{% else %}empty{% endfor %}",
+    ),
+    content="<loop 0/?> True False <loop 1/?> True False empty",
+  )
+}
+
+///|
+test "difftest: reverse slices of empty values (upstream panics)" {
+  inspect(
+    dt_render(
+      "[{{ [][::-1] }}][{{ ''[:-10:-1] }}][{{ ()[::-2] }}][{{ [1, 2][5::-1] }}]",
+    ),
+    content="[[]][][()][[2, 1]]",
+  )
+}

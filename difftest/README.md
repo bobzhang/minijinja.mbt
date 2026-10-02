@@ -38,5 +38,8 @@ Cases where upstream misbehaves and the port deliberately does not follow:
   The port reverses them, like Jinja2.
 * `{% for x in 'a' %}{% with y = 1 %}{% break %}{% endwith %}{% endfor %}`
   panics upstream (`Option::unwrap()` on `None`).  The port renders nothing.
+* `{{ [][::-1] }}` and `{{ ''[::-1] }}` (reverse slices of empty sequences
+  and strings) panic upstream with an out of bounds index.  The port returns
+  an empty result.
 * `{{ 1|indent(huge) }}` (for example `indent(2 ** 63)`) aborts upstream with
   an allocation failure.  The port raises an error.
