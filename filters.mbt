@@ -1122,6 +1122,7 @@ fn filter_slice(
     raise TemplateError::new(InvalidOperation, "count cannot be 0")
   }
   let items = state.undefined_behavior().try_iter(value).to_array()
+  check_alloc_count(count, "slice count")
   let len = items.length()
   let items_per_slice = len / count
   let slices_with_extra = len % count
@@ -1155,6 +1156,7 @@ fn filter_batch(
   if count == 0 {
     raise TemplateError::new(InvalidOperation, "count cannot be 0")
   }
+  check_alloc_count(count, "batch count")
   let rv = []
   let mut tmp = []
   for item in state.undefined_behavior().try_iter(value) {
@@ -1195,6 +1197,9 @@ fn filter_tojson(
     Some(val) => Some(value_to_usize(val))
   }
   kwargs.assert_all_used()
+  if indent is Some(n) {
+    check_alloc_count(n, "indent")
+  }
   let s = try {
     match indent {
       Some(indent) =>
@@ -1248,6 +1253,7 @@ fn filter_indent(
     Some(width) => width
     None => kwargs.get_usize("width").unwrap_or(4)
   }
+  check_alloc_count(width, "indent width")
   let indent_first_line = match indent_first_line {
     Some(v) => v
     None => kwargs.get_bool("first").unwrap_or(false)
@@ -1660,7 +1666,8 @@ fn filter_zip(state : State, args : Array[Value]) -> Value raise TemplateError {
   Value::make_iterable(() => {
     let iters = []
     for val in all_values {
-      let it = val.try_iter() catch { _ => return Iter::empty() }
+      // like upstream's `from_fn` fallback: empty, but of unknown length
+      let it = val.try_iter() catch { _ => return Iter::new(() => None) }
       iters.push(it)
     }
     Iter::new(

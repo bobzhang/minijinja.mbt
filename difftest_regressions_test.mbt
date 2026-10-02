@@ -104,3 +104,37 @@ test "difftest: reverse slices of empty values (upstream panics)" {
     content="[[]][][()][[2, 1]]",
   )
 }
+
+///|
+test "difftest: zip over non-iterables has unknown length" {
+  inspect(
+    dt_render(
+      "{{ none|zip(1) }} {% if none|zip(1) %}T{% else %}F{% endif %} {{ 'x' if none|zip(1) }}",
+    ),
+    content="<iterator> T x",
+  )
+}
+
+///|
+test "difftest: usize arguments are 64 bit" {
+  let env = @minijinja.Environment::new()
+  env.set_undefined_behavior(Strict)
+  // the count converts fine, the undefined value fails first like upstream
+  inspect(
+    env.render_str(
+      "{{ nope|slice(9007199254740993.0) }}",
+      @minijinja.Value::none(),
+    ) catch {
+      e => e.to_string()
+    },
+    content="undefined value (in <string>:1)",
+  )
+  inspect(
+    dt_render("{{ [1]|slice(9007199254740993.0) }}"),
+    content="error: invalid operation: slice count is too large (in t.txt:1)",
+  )
+  inspect(
+    dt_render("{{ 1|indent(big) }}"),
+    content="error: invalid operation: indent width is too large (in t.txt:1)",
+  )
+}

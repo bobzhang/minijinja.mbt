@@ -41,5 +41,8 @@ Cases where upstream misbehaves and the port deliberately does not follow:
 * `{{ [][::-1] }}` and `{{ ''[::-1] }}` (reverse slices of empty sequences
   and strings) panic upstream with an out of bounds index.  The port returns
   an empty result.
-* `{{ 1|indent(huge) }}` (for example `indent(2 ** 63)`) aborts upstream with
-  an allocation failure.  The port raises an error.
+* `{{ x is divisibleby(0) }}` panics upstream (remainder by zero).  The
+  port returns false.
+* `{{ 1|batch(1e16) }}`, `{{ 1|indent(huge) }}` (for example `indent(2 ** 63)`) aborts upstream with
+  an allocation failure (the same goes for `slice` and the `tojson` indent).
+  The port raises a "... is too large" error for counts above 100 million.

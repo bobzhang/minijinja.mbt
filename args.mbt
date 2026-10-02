@@ -202,11 +202,26 @@ fn value_to_i64(v : Value) -> Int64 raise TemplateError {
 }
 
 ///|
-/// Port of `usize::try_from(Value)` (bounded to `Int`).
+/// Port of `usize::try_from(Value)` with Rust's 64 bit `usize`.  Values that
+/// do not fit an `Int` saturate; the callers reject counts this large before
+/// allocating (where upstream would abort on the allocation).
 fn value_to_usize(v : Value) -> Int raise TemplateError {
   match v.to_i128() {
     Some(i) if i >= 0N && i <= 0x7FFFFFFFN => i.to_int()
+    Some(i) if i >= 0N && i <= max_u64_big => 0x7FFFFFFF
     _ => raise unsupported_conversion(v.kind(), "usize")
+  }
+}
+
+///|
+/// Counts above this are rejected where upstream would allocate memory
+/// proportional to them (and abort on the allocation failure).
+let max_alloc_count = 100_000_000
+
+///|
+fn check_alloc_count(n : Int, what : String) -> Unit raise TemplateError {
+  if n > max_alloc_count {
+    raise TemplateError::new(InvalidOperation, "\{what} is too large")
   }
 }
 
