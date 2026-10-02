@@ -701,16 +701,33 @@ fn FmtCursor::peek(self : FmtCursor) -> Int {
 }
 
 ///|
-/// Returns the full character at the cursor (decoding surrogate pairs).
-fn FmtCursor::peek_full_char(self : FmtCursor) -> Char {
+/// The byte at the cursor shown as a character, like upstream's
+/// `byte as char`: for non-ASCII characters this is the first UTF-8 byte
+/// interpreted as Latin-1 (`é` is reported as `Ã`).
+fn FmtCursor::peek_byte_char(self : FmtCursor) -> Char {
   let hi = self.source[self.pos].to_int()
-  if hi >= 0xD800 && hi <= 0xDBFF && self.pos + 1 < self.source.length() {
+  let cp = if hi >= 0xD800 &&
+    hi <= 0xDBFF &&
+    self.pos + 1 < self.source.length() {
     let lo = self.source[self.pos + 1].to_int()
     if lo >= 0xDC00 && lo <= 0xDFFF {
-      return (0x10000 + ((hi - 0xD800) << 10) + (lo - 0xDC00)).unsafe_to_char()
+      0x10000 + ((hi - 0xD800) << 10) + (lo - 0xDC00)
+    } else {
+      hi
     }
+  } else {
+    hi
   }
-  hi.unsafe_to_char()
+  let lead = if cp < 0x80 {
+    cp
+  } else if cp < 0x800 {
+    0xC0 | (cp >> 6)
+  } else if cp < 0x10000 {
+    0xE0 | (cp >> 12)
+  } else {
+    0xF0 | (cp >> 18)
+  }
+  lead.unsafe_to_char()
 }
 
 ///|
@@ -844,7 +861,7 @@ fn fmt_parse_type(
       '}' if style == StrFormat => return Default
       _ =>
         raise fmt_err(
-          "invalid conversion type '\{cursor.peek_full_char()}' in format spec at offset \{cursor.byte_pos()}",
+          "invalid conversion type '\{cursor.peek_byte_char()}' in format spec at offset \{cursor.byte_pos()}",
         )
     }
   }
@@ -1037,7 +1054,7 @@ fn str_format_replacement_field(
     let c = cursor.peek()
     if c >= 0 {
       raise fmt_err(
-        "expected closing '}' in format spec at offset \{location}; found '\{cursor.peek_full_char()}'",
+        "expected closing '}' in format spec at offset \{location}; found '\{cursor.peek_byte_char()}'",
       )
     } else {
       raise fmt_err("missing closing '}' in format spec at offset \{location}")

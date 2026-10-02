@@ -342,7 +342,7 @@ test "codex review 3 regressions" {
       inspect(
         err.detail().unwrap_or(""),
         content=(
-          #|invalid conversion type '😀' in format spec at offset 2
+          #|invalid conversion type 'ð' in format spec at offset 2
         ),
       )
   } noraise {

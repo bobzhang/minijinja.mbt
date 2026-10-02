@@ -15,7 +15,8 @@ The first four behaviors were checked using existing compiled JavaScript artifac
 
 1. Fixed: `cycler` copies its input.
 2. Fixed: `truncate` compares in 64-bit arithmetic (regression test added).
-3. Fixed: format-spec errors decode full characters (regression test added).
+3. Reverted after differential testing: upstream reports the first UTF-8 byte
+   (`'😀'` shows as `'ð'`), and the port now matches it exactly.
 4. Not changed (deliberate): `wordcount` uses Unicode 15.1 tables shared with
    the rest of the port instead of the older `unicode_categories` tables.
 5. Not changed: collision needs 2³² key allocations; keys are expected to be

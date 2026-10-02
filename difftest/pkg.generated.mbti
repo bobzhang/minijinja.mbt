@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/minijinja/difftest"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Case derive(@debug.Debug)
+
+type Expr derive(@debug.Debug)
+
+type JVal derive(@debug.Debug)
+
+type Outcome derive(Eq, @debug.Debug)
+
+type Stmt derive(@debug.Debug)
+
+type Ws derive(@debug.Debug)
+
+// Type aliases
+
+// Traits

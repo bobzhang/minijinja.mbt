@@ -1,0 +1,20 @@
+[package]
+name = "minijinja-oracle"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Differential testing oracle: renders test cases with upstream MiniJinja.
+# Features mirror what the MoonBit port implements (insertion ordered maps).
+[dependencies]
+minijinja = { path = "../../.repos/minijinja/minijinja", features = [
+  "preserve_order",
+  "loop_controls",
+  "json",
+  "urlencode",
+  "unicode",
+] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+
+[workspace]

@@ -480,6 +480,33 @@ pub fn Args::opt_i64(self : Args) -> Int64? raise TemplateError {
 }
 
 ///|
+/// Port of `isize::try_from(Value)` (64 bit), used where upstream takes an
+/// `isize` so that conversion errors name the same type.
+fn value_to_isize(v : Value) -> Int64 raise TemplateError {
+  match v.to_i128() {
+    Some(i) if in_i64(i) => i.to_int64()
+    _ => raise unsupported_conversion(v.kind(), "isize")
+  }
+}
+
+///|
+fn Args::isize(self : Args) -> Int64 raise TemplateError {
+  match self.next_raw() {
+    Some(v) => value_to_isize(v)
+    None => raise TemplateError::from_kind(MissingArgument)
+  }
+}
+
+///|
+fn Args::opt_isize(self : Args) -> Int64? raise TemplateError {
+  match self.next_raw() {
+    Some(v) if v.is_undefined() || v.is_none() => None
+    Some(v) => Some(value_to_isize(v))
+    None => None
+  }
+}
+
+///|
 /// A required 32 bit integer argument.
 pub fn Args::i32(self : Args) -> Int raise TemplateError {
   match self.next_raw() {

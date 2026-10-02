@@ -1,9 +1,9 @@
 ///|
 fn func_range(state : State, args : Array[Value]) -> Value raise TemplateError {
   let a = Args::new(state, args)
-  let lower = a.i64()
-  let upper = a.opt_i64()
-  let step = a.opt_i64()
+  let lower = a.isize()
+  let upper = a.opt_isize()
+  let step = a.opt_isize()
   a.finish()
   let (start, end) = match upper {
     Some(upper) => (lower, upper)

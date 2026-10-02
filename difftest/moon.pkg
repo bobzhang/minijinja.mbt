@@ -1,0 +1,17 @@
+import {
+  "bobzhang/minijinja",
+  "moonbitlang/core/quickcheck",
+  "moonbitlang/core/quickcheck/splitmix",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/json",
+  "moonbitlang/core/env",
+  "moonbitlang/core/string",
+}
+
+supported_targets = "native"
+
+pkgtype(kind: "executable")
+
+options(
+  "native-stub": [ "oracle.c" ],
+)

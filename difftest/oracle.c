@@ -1,0 +1,77 @@
+// Talks to the Rust oracle process (see difftest/oracle) over pipes.
+#include <moonbit.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+static FILE *oracle_in = NULL;
+static FILE *oracle_out = NULL;
+
+MOONBIT_FFI_EXPORT int difftest_oracle_start(moonbit_bytes_t path) {
+  // restarting: drop the pipes of the previous (dead) oracle
+  if (oracle_in != NULL) {
+    fclose(oracle_in);
+    fclose(oracle_out);
+    oracle_in = NULL;
+    oracle_out = NULL;
+    while (waitpid(-1, NULL, WNOHANG) > 0) {
+    }
+  }
+  int to_child[2], from_child[2];
+  if (pipe(to_child) != 0 || pipe(from_child) != 0) {
+    return -1;
+  }
+  pid_t pid = fork();
+  if (pid < 0) {
+    return -1;
+  }
+  if (pid == 0) {
+    dup2(to_child[0], 0);
+    dup2(from_child[1], 1);
+    close(to_child[1]);
+    close(from_child[0]);
+    execl((const char *)path, (const char *)path, (char *)NULL);
+    _exit(127);
+  }
+  close(to_child[0]);
+  close(from_child[1]);
+  oracle_in = fdopen(to_child[1], "w");
+  oracle_out = fdopen(from_child[0], "r");
+  return 0;
+}
+
+// Sends one line and returns the response line (empty if the oracle died).
+MOONBIT_FFI_EXPORT moonbit_bytes_t difftest_oracle_query(moonbit_bytes_t req) {
+  size_t n = Moonbit_array_length(req);
+  fwrite(req, 1, n, oracle_in);
+  fputc('\n', oracle_in);
+  fflush(oracle_in);
+  char *line = NULL;
+  size_t cap = 0;
+  ssize_t len = getline(&line, &cap, oracle_out);
+  if (len < 0) {
+    free(line);
+    return moonbit_make_bytes(0, 0);
+  }
+  if (len > 0 && line[len - 1] == '\n') {
+    len--;
+  }
+  moonbit_bytes_t rv = moonbit_make_bytes(len, 0);
+  memcpy(rv, line, len);
+  free(line);
+  return rv;
+}
+
+// Writes `data` to `path` (used to keep the last case around if we crash).
+MOONBIT_FFI_EXPORT void difftest_write_file(moonbit_bytes_t path,
+                                            moonbit_bytes_t data) {
+  FILE *f = fopen((const char *)path, "wb");
+  if (f == NULL) {
+    return;
+  }
+  fwrite(data, 1, Moonbit_array_length(data), f);
+  fclose(f);
+}

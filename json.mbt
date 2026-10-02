@@ -510,12 +510,12 @@ fn write_json(
                 Object(o) if o.repr() is Plain =>
                   write_json_string(sb, k.to_string())
                 F64(_) =>
-                  raise TemplateError::new(
+                  raise TemplateError::external(
                     BadSerialization,
                     "float key must be finite (got NaN or +/-inf)",
                   )
                 _ =>
-                  raise TemplateError::new(
+                  raise TemplateError::external(
                     BadSerialization,
                     "key must be a string",
                   )

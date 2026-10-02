@@ -198,6 +198,15 @@ pub fn Value::as_usize(self : Value) -> Int? {
 }
 
 ///|
+/// Port of upstream's `as_usize` with Rust's 64 bit `usize`.
+fn Value::as_usize64(self : Value) -> UInt64? {
+  match self.to_i128() {
+    Some(v) if v >= 0N && v <= max_u64_big => Some(v.to_uint64())
+    _ => None
+  }
+}
+
+///|
 /// Returns the value as `Double` if it is a number (or a bool).
 pub fn Value::as_f64(self : Value) -> Double? {
   as_f64(self, true)
@@ -449,21 +458,27 @@ fn value_mul(lhs : Value, rhs : Value) -> Value raise TemplateError {
     _ => None
   }
   if str_and_n is Some((s, n)) {
-    guard n.as_usize() is Some(n) else {
+    guard n.as_usize64() is Some(n) else {
       raise TemplateError::new(
         InvalidOperation,
         "strings can only be multiplied with integers",
       )
     }
     let byte_len = utf8_len(s)
-    if n != 0 && byte_len > max_repeated_len / n {
+    if byte_len == 0 || n == 0UL {
+      return Value::from_string("")
+    }
+    if n > (max_repeated_len / byte_len).to_uint64() {
       raise TemplateError::new(InvalidOperation, "repeated string is too large")
     }
-    return Value::from_string(s.repeat(n))
+    return Value::from_string(s.repeat(n.to_int()))
   }
+  // like upstream: the first object operand is picked before filtering, so
+  // `map * seq` is an unsupported operation rather than a repetition
   let seq_and_n = match (lhs, rhs) {
-    (Object(o), _) if o.repr() is (Iterable | Seq) => Some((o, rhs))
-    (_, Object(o)) if o.repr() is (Iterable | Seq) => Some((o, lhs))
+    (Object(o), _) | (_, Object(o)) if !(o.repr() is (Iterable | Seq)) => None
+    (Object(o), _) => Some((o, rhs))
+    (_, Object(o)) => Some((o, lhs))
     _ => None
   }
   if seq_and_n is Some((seq, n)) {
@@ -480,7 +495,7 @@ fn value_mul(lhs : Value, rhs : Value) -> Value raise TemplateError {
 
 ///|
 fn repeat_iterable(n : Value, seq : DynObject) -> Value raise TemplateError {
-  guard n.as_usize() is Some(n) else {
+  guard n.as_usize64() is Some(n) else {
     raise TemplateError::new(
       InvalidOperation,
       "sequences and iterables can only be multiplied with integers",
@@ -493,12 +508,13 @@ fn repeat_iterable(n : Value, seq : DynObject) -> Value raise TemplateError {
     )
   }
   let is_tuple = seq.inner is Tuple(_)
-  if len == 0 || n == 0 {
+  if len == 0 || n == 0UL {
     return if is_tuple { Value::from_tuple([]) } else { Value::from_array([]) }
   }
-  if len > max_repeated_len / n {
+  if n > (max_repeated_len / len).to_uint64() {
     raise TemplateError::new(InvalidOperation, "repeated sequence is too large")
   }
+  let n = n.to_int()
   let repeated_len = len * n
   if seq.inner is Tuple(items) {
     let values = Array(capacity=repeated_len)

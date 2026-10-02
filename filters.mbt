@@ -694,6 +694,45 @@ fn parse_i128(s : String) -> BigInt? {
 }
 
 ///|
+/// Rust's decimal float grammar (after the sign):
+/// `(Digit+ | Digit+ '.' Digit* | Digit* '.' Digit+) ('e' Sign? Digit+)?`
+fn is_rust_float_syntax(body : String) -> Bool {
+  let n = body.length()
+  let mut i = 0
+  let mut int_digits = 0
+  while i < n && body[i] >= '0' && body[i] <= '9' {
+    i += 1
+    int_digits += 1
+  }
+  let mut frac_digits = 0
+  if i < n && body[i] == '.' {
+    i += 1
+    while i < n && body[i] >= '0' && body[i] <= '9' {
+      i += 1
+      frac_digits += 1
+    }
+  }
+  if int_digits + frac_digits == 0 {
+    return false
+  }
+  if i < n && body[i] == 'e' {
+    i += 1
+    if i < n && (body[i] == '+' || body[i] == '-') {
+      i += 1
+    }
+    let mut exp_digits = 0
+    while i < n && body[i] >= '0' && body[i] <= '9' {
+      i += 1
+      exp_digits += 1
+    }
+    if exp_digits == 0 {
+      return false
+    }
+  }
+  i == n
+}
+
+///|
 /// Parses a float like Rust's `str::parse::<f64>`.
 fn parse_f64_rust(s : String) -> Double raise TemplateError {
   let lower = s.to_lower()
@@ -705,19 +744,20 @@ fn parse_f64_rust(s : String) -> Double raise TemplateError {
   let neg = lower.has_prefix("-")
   match body {
     "inf" | "infinity" => return if neg { -1.0 / 0.0 } else { 1.0 / 0.0 }
-    "nan" => return 0.0 / 0.0
+    "nan" => {
+      // a positive quiet NaN like Rust (`0.0 / 0.0` is negative on x86)
+      let nan = 0x7FF8000000000000L.reinterpret_as_double()
+      return if neg { -nan } else { nan }
+    }
     _ => ()
   }
-  let mut ok = !body.is_empty() && !body.contains("_")
-  let mut seen_digit = false
-  for c in body {
-    match c {
-      '0'..='9' => seen_digit = true
-      '.' | 'e' | '+' | '-' => ()
-      _ => ok = false
-    }
+  if s.is_empty() {
+    raise TemplateError::new(
+      InvalidOperation,
+      "cannot parse float from empty string",
+    )
   }
-  if !ok || !seen_digit {
+  if !is_rust_float_syntax(body) {
     raise TemplateError::new(InvalidOperation, "invalid float literal")
   }
   // the syntax was validated above, so a failure here is an overflow which

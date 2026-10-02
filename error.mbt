@@ -126,6 +126,9 @@ struct ErrorData {
   mut span : Span?
   mut source : TemplateError?
   mut debug_info : DebugInfo?
+  /// Stands in for a foreign error type (like a `serde_json::Error`): it
+  /// displays only its message.
+  external : Bool
 }
 
 ///|
@@ -155,6 +158,23 @@ pub fn TemplateError::new(kind : ErrorKind, detail : String) -> TemplateError {
     span: None,
     source: None,
     debug_info: None,
+    external: false,
+  })
+}
+
+///|
+/// An error standing in for a foreign error type, used as the source of
+/// another error.  It displays only `msg`.
+fn TemplateError::external(kind : ErrorKind, msg : String) -> TemplateError {
+  TemplateError({
+    kind,
+    detail: Some(msg),
+    name: None,
+    lineno: 0,
+    span: None,
+    source: None,
+    debug_info: None,
+    external: true,
   })
 }
 
@@ -169,6 +189,7 @@ pub fn TemplateError::from_kind(kind : ErrorKind) -> TemplateError {
     span: None,
     source: None,
     debug_info: None,
+    external: false,
   })
 }
 
@@ -192,6 +213,7 @@ fn TemplateError::internal_clone(self : TemplateError) -> TemplateError {
     span: d.span,
     source: d.source,
     debug_info: d.debug_info,
+    external: d.external,
   })
 }
 
@@ -330,6 +352,10 @@ fn TemplateError::write_display(
   alternate : Bool,
 ) -> Unit {
   let d = self.data()
+  if d.external {
+    sb.write_string(d.detail.unwrap_or(""))
+    return
+  }
   match d.detail {
     Some(detail) => {
       sb.write_string(d.kind.description())
