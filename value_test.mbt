@@ -99,7 +99,8 @@ test "value: sort_different_types" {
     @minijinja.Value::none(),
     @minijinja.Value::from_int(0),
     @minijinja.Value::from_double(-1.0 / 0.0),
-    @minijinja.Value::from_double(0.0 / 0.0),
+    // `f64::NAN` (positive quiet NaN); `0.0 / 0.0` is negative on x86
+    @minijinja.Value::from_double(0x7FF8000000000000L.reinterpret_as_double()),
     @minijinja.Value::from_double(1.0 / 0.0),
   ]
   v.sort()
@@ -1260,7 +1261,8 @@ test "value: sorting" {
   let values = [
     @minijinja.Value::from_double(-1.0 / 0.0),
     @minijinja.Value::from_double(1.0),
-    @minijinja.Value::from_double(0.0 / 0.0),
+    // `f64::NAN` (positive quiet NaN); `0.0 / 0.0` is negative on x86
+    @minijinja.Value::from_double(0x7FF8000000000000L.reinterpret_as_double()),
     @minijinja.Value::from_double(1.0 / 0.0),
     @minijinja.Value::from_double(42.0),
     @minijinja.Value::from_int(41),
