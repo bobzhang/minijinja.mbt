@@ -4,7 +4,7 @@ For **A**, most important first:
 
 1. **[P1] Scientific-format rounding can panic instead of rendering.**
 
-   MoonBit: [internal/rfmt/exact.mbt:144](/Users/hongbozhang/git/minijinja.mbt/internal/rfmt/exact.mbt:144), reached from `formatting.mbt`. Rust: [formatting.rs:294](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/formatting.rs:294).
+   MoonBit: [internal/rfmt/exact.mbt:144](internal/rfmt/exact.mbt:144), reached from `formatting.mbt`. Rust: [formatting.rs:294](.repos/minijinja/minijinja/src/formatting.rs:294).
 
    ```jinja
    {{ '%.1e'|format(9.99) }}
@@ -16,7 +16,7 @@ For **A**, most important first:
 
 2. **[P2] `from_json_str` accepts invalid JSON numbers and strings.**
 
-   MoonBit: [json.mbt:185](/Users/hongbozhang/git/minijinja.mbt/json.mbt:185), [json.mbt:173](/Users/hongbozhang/git/minijinja.mbt/json.mbt:173), and line 178. Rust: [value/deserialize.rs:12](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/value/deserialize.rs:12), driven by `serde_json::from_str`, as in [test_templates.rs:79](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/tests/test_templates.rs:79).
+   MoonBit: [json.mbt:185](json.mbt:185), [json.mbt:173](json.mbt:173), and line 178. Rust: [value/deserialize.rs:12](.repos/minijinja/minijinja/src/value/deserialize.rs:12), driven by `serde_json::from_str`, as in [test_templates.rs:79](.repos/minijinja/minijinja/tests/test_templates.rs:79).
 
    ```moonbit
    Value::from_json_str("01")
@@ -30,7 +30,7 @@ For **A**, most important first:
 
 3. **[P2] Overflowing float literals still fail despite the filter-parsing fix.**
 
-   MoonBit: [lexer.mbt:552](/Users/hongbozhang/git/minijinja.mbt/lexer.mbt:552). Rust: [compiler/lexer.rs:499](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/compiler/lexer.rs:499).
+   MoonBit: [lexer.mbt:552](lexer.mbt:552). Rust: [compiler/lexer.rs:499](.repos/minijinja/minijinja/src/compiler/lexer.rs:499).
 
    ```jinja
    {{ 1e400 }}
@@ -42,7 +42,7 @@ For **A**, most important first:
 
 4. **[P2] JSON map keys reject plain objects that Rust serializes as strings.**
 
-   MoonBit: [json.mbt:453](/Users/hongbozhang/git/minijinja.mbt/json.mbt:453). Rust: [value/mod.rs:2008](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/value/mod.rs:2008), together with map-entry serialization at line 2025.
+   MoonBit: [json.mbt:453](json.mbt:453). Rust: [value/mod.rs:2008](.repos/minijinja/minijinja/src/value/mod.rs:2008), together with map-entry serialization at line 2025.
 
    ```jinja
    {{ {range: 1}|tojson }}
@@ -60,7 +60,7 @@ For **A**, most important first:
 
 5. **[P3] JSON integer parsing loses negative zero.**
 
-   MoonBit: [json.mbt:216](/Users/hongbozhang/git/minijinja.mbt/json.mbt:216). Rust: [value/deserialize.rs:12](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/value/deserialize.rs:12), using serde_json’s numeric deserializer.
+   MoonBit: [json.mbt:216](json.mbt:216). Rust: [value/deserialize.rs:12](.repos/minijinja/minijinja/src/value/deserialize.rs:12), using serde_json’s numeric deserializer.
 
    ```moonbit
    Value::from_json_str("-0").to_json_string()
@@ -72,7 +72,7 @@ For **A**, most important first:
 
 6. **[P3] Failed typed keyword conversions incorrectly consume the keyword.**
 
-   MoonBit: [args.mbt:108](/Users/hongbozhang/git/minijinja.mbt/args.mbt:108), also the other typed getters. Rust: [value/argtypes.rs:1169](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/value/argtypes.rs:1169).
+   MoonBit: [args.mbt:108](args.mbt:108), also the other typed getters. Rust: [value/argtypes.rs:1169](.repos/minijinja/minijinja/src/value/argtypes.rs:1169).
 
    Construct `Kwargs::from_pairs([("n", Value::from_string("x"))])`, catch the error from `get_int("n")`, then call `assert_all_used()`.
 
@@ -84,7 +84,7 @@ The other requested areas did not yield additional actionable port divergences i
 
 For **B**, the core rendering API is broadly complete. The highest-value improvements are at the application integration boundary:
 
-1. **Add consistent value conversion and accessors.** [The current interface](/Users/hongbozhang/git/minijinja.mbt/pkg.generated.mbti:301) provides many constructors but lacks strict boolean and full-width integer accessors. Custom argument conversion also requires repetitive manual code.
+1. **Add consistent value conversion and accessors.** [The current interface](pkg.generated.mbti:301) provides many constructors but lacks strict boolean and full-width integer accessors. Custom argument conversion also requires repetitive manual code.
 
    ```moonbit
    pub fn Value::as_bool(Self) -> Bool?
@@ -99,7 +99,7 @@ For **B**, the core rendering API is broadly complete. The highest-value improve
 
    Implementing `FromValue` for optional types would also unify required/optional keyword handling.
 
-2. **Make custom objects recoverable and formatting-aware.** [`Object`](/Users/hongbozhang/git/minijinja.mbt/pkg.generated.mbti:386) has useful defaults, but applications cannot recover their concrete object type. This particularly limits the newly added `custom_cmp`. Its rendering hook also cannot observe pretty formatting.
+2. **Make custom objects recoverable and formatting-aware.** [`Object`](pkg.generated.mbti:386) has useful defaults, but applications cannot recover their concrete object type. This particularly limits the newly added `custom_cmp`. Its rendering hook also cannot observe pretty formatting.
 
    Proposed signatures, with an explicit registered type key for safe extraction:
 
@@ -109,7 +109,7 @@ For **B**, the core rendering API is broadly complete. The highest-value improve
    fn render_with_options(Self, pretty~ : Bool) -> String?
    ```
 
-3. **Expose streaming rendering.** [`Template`](/Users/hongbozhang/git/minijinja.mbt/pkg.generated.mbti:282) currently requires buffering the full output. Rust exposes writer-based rendering and block rendering.
+3. **Expose streaming rendering.** [`Template`](pkg.generated.mbti:282) currently requires buffering the full output. Rust exposes writer-based rendering and block rendering.
 
    ```moonbit
    pub fn Template::render_to(
@@ -122,7 +122,7 @@ For **B**, the core rendering API is broadly complete. The highest-value improve
 
    Wrap callback failures as `WriteFailure`, preserving their cause.
 
-4. **Preserve arbitrary error causes and implement `Debug`.** [`with_source`](/Users/hongbozhang/git/minijinja.mbt/error.mbt:200) accepts only `TemplateError`, preventing loaders and functions from retaining filesystem, network, or parsing errors.
+4. **Preserve arbitrary error causes and implement `Debug`.** [`with_source`](error.mbt:200) accepts only `TemplateError`, preventing loaders and functions from retaining filesystem, network, or parsing errors.
 
    ```moonbit
    pub fn TemplateError::with_source(Self, Error) -> Self

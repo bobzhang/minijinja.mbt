@@ -98,7 +98,7 @@ If the engine later needs separate compiler and VM packages, first introduce an 
 
 ### Value representation
 
-The source representation is in [value/mod.rs](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/value/mod.rs:553).
+The source representation is in [value/mod.rs](.repos/minijinja/minijinja/src/value/mod.rs:553).
 
 Use an opaque public `Value` wrapping a private enum. The following is a design sketch, not compiled code:
 
@@ -149,7 +149,7 @@ Keep `Bytes` distinct: `len()` counts bytes, indexing yields a numeric byte, and
 
 ### Objects and identity
 
-Mirror [value/object.rs](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/value/object.rs:172), with defaults supplied by the library:
+Mirror [value/object.rs](.repos/minijinja/minijinja/src/value/object.rs:172), with defaults supplied by the library:
 
 ```moonbit
 pub(open) trait Object {
@@ -206,7 +206,7 @@ Avoid reducing every enumerable object to `Array[Value]`. You need:
 
 An iterator wrapper with a `next` closure and size information is sufficient; repeatable objects create fresh wrappers. One-shot objects share a cursor.
 
-Preserve tuples. This checkout’s [value/tuple.rs](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/value/tuple.rs) distinguishes tuples from lists in equality, ordering, representation, and several sequence operations. A one-item tuple renders `(x,)`.
+Preserve tuples. This checkout’s [value/tuple.rs](.repos/minijinja/minijinja/src/value/tuple.rs) distinguishes tuples from lists in equality, ordering, representation, and several sequence operations. A one-item tuple renders `(x,)`.
 
 `Kwargs` must be a **tagged mapping**, not merely a map-shaped value:
 
@@ -217,7 +217,7 @@ Preserve tuples. This checkout’s [value/tuple.rs](/Users/hongbozhang/git/minij
 - Preserve duplicate-key and non-string-key errors.
 - Distinguish `Rest<Value>` from the permissive `Rest<ValueOrKwargs>` equivalent.
 
-See [value/argtypes.rs](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/value/argtypes.rs:1037).
+See [value/argtypes.rs](.repos/minijinja/minijinja/src/value/argtypes.rs:1037).
 
 ### Integers, equality, ordering, and hashing
 
@@ -230,7 +230,7 @@ U128:       0 … 2^128−1
 
 Do not expose arbitrary-precision template arithmetic as an accidental extension.
 
-Port [value/ops.rs](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/value/ops.rs) closely:
+Port [value/ops.rs](.repos/minijinja/minijinja/src/value/ops.rs) closely:
 
 - Literals parse through `u64`, then `u128`.
 - Arithmetic commonly coerces to signed 128-bit, performs checked operations, and narrows results through `int_as_value`.
@@ -345,13 +345,13 @@ State:
 
 Each evaluator invocation owns its operand stack, program counter, filter/test caches, and local autoescape stack.
 
-`Template` can directly retain its environment and compiled template. `Captured` can simply retain `{ output, state }`. The self-referential wrappers in [template.rs](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/template.rs:210) disappear.
+`Template` can directly retain its environment and compiled template. `Captured` can simply retain `{ output, state }`. The self-referential wrappers in [template.rs](.repos/minijinja/minijinja/src/template.rs:210) disappear.
 
 Keep registered configuration stable during a render. Rust borrowing prevents many environment mutations that MoonBit would otherwise permit. Either freeze configuration for active renders or render against a retained configuration snapshot.
 
 ### Context lookup and frame behavior
 
-Port [vm/context.rs](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/vm/context.rs) directly. Lookup visits frames from innermost outward:
+Port [vm/context.rs](.repos/minijinja/minijinja/src/vm/context.rs) directly. Lookup visits frames from innermost outward:
 
 1. Locals.
 2. The special loop variable.
@@ -365,7 +365,7 @@ Preserve that scope behavior instead of using a single mutable context dictionar
 
 ### Cleanup is the main borrowing replacement
 
-The key abstraction is [State::with_execution_state](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/vm/state.rs:155).
+The key abstraction is [State::with_execution_state](.repos/minijinja/minijinja/src/vm/state.rs:155).
 
 Implement scoped save/restore helpers using `defer`, or explicit result capture followed by restoration. Restoration must occur on both normal return and raised errors:
 
@@ -393,7 +393,7 @@ The current implementation has precise semantics:
 
 GC lets you use direct closure objects instead of indices, but **do not capture the entire live frame** and do not copy captured values into an immutable environment.
 
-Retain the render identity check in [Macro::call](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/vm/macro_object.rs). Owning the instructions under GC does not mean an escaped macro should become callable in an unrelated render state.
+Retain the render identity check in [Macro::call](.repos/minijinja/minijinja/src/vm/macro_object.rs). Owning the instructions under GC does not mean an escaped macro should become callable in an unrelated render state.
 
 The strongest tests here are in `tests/test_macros.rs`, especially:
 
@@ -404,7 +404,7 @@ The strongest tests here are in `tests/test_macros.rs`, especially:
 
 ### Loops
 
-Replace mutexes and atomics in [vm/loop_object.rs](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/vm/loop_object.rs) with ordinary mutable fields for synchronous execution.
+Replace mutexes and atomics in [vm/loop_object.rs](.repos/minijinja/minijinja/src/vm/loop_object.rs) with ordinary mutable fields for synchronous execution.
 
 Preserve:
 
@@ -458,7 +458,7 @@ ErrorCause:
 
 Use an immutable `ErrorInfo`; attaching location or a cause returns a new value. This avoids accidentally changing errors shared through `Invalid`.
 
-Mirror the relevant `ErrorKind` variants and their exact human-readable descriptions from [error.rs](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/error.rs). Keep causes structured; do not flatten an include failure into one concatenated message.
+Mirror the relevant `ErrorKind` variants and their exact human-readable descriptions from [error.rs](.repos/minijinja/minijinja/src/error.rs). Keep causes structured; do not flatten an include failure into one concatenated message.
 
 Implement explicit renderers:
 
@@ -480,7 +480,7 @@ Key source behaviors:
 - `Error::range()` returns UTF-8 byte offsets.
 - Pretty Rust debug output omits the extra source panel; alternate display includes it.
 
-Port [debug.rs::render_debug_info](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/debug.rs) as a compatibility renderer:
+Port [debug.rs::render_debug_info](.repos/minijinja/minijinja/src/debug.rs) as a compatibility renderer:
 
 - 79-character separators.
 - Up to three preceding and following lines.
@@ -494,7 +494,7 @@ Keep source and instruction location tables even when expensive debug snapshots 
 
 ### Source coordinates: preserve Rust’s units
 
-A crucial distinction in [Tokenizer::advance](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/compiler/lexer.rs:386):
+A crucial distinction in [Tokenizer::advance](.repos/minijinja/minijinja/src/compiler/lexer.rs:386):
 
 | Coordinate | Rust behavior to preserve |
 |---|---|
@@ -560,7 +560,7 @@ Port `utils.rs::Unescaper`: it combines `\u` surrogate pairs, rejects malformed 
 
 ### Printf has mixed units
 
-[formatting.rs](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/src/formatting.rs) deserves its own port:
+[formatting.rs](.repos/minijinja/minijinja/src/formatting.rs) deserves its own port:
 
 - Format-error offsets count UTF-8 bytes.
 - String precision truncates by scalar count.
@@ -622,7 +622,7 @@ The rendering suite includes `.html` files as well as `.txt`; filenames affect a
 
 ### Reproduce the Rust harness
 
-Use [tests/test_templates.rs](/Users/hongbozhang/git/minijinja.mbt/.repos/minijinja/minijinja/tests/test_templates.rs:66) as the specification:
+Use [tests/test_templates.rs](.repos/minijinja/minijinja/tests/test_templates.rs:66) as the specification:
 
 1. Split an input once at `"\n---\n"`.
 2. Decode the first part as context JSON.
