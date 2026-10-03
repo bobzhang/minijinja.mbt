@@ -4,7 +4,10 @@ extern "C" fn oracle_start_ffi(path : Bytes) -> Int = "difftest_oracle_start"
 
 ///|
 #borrow(req)
-extern "C" fn oracle_query_ffi(req : Bytes) -> Bytes = "difftest_oracle_query"
+extern "C" fn oracle_query_ffi(req : Bytes, timeout_ms : Int) -> Bytes = "difftest_oracle_query"
+
+///|
+extern "C" fn alarm_ffi(seconds : Int) -> Unit = "difftest_alarm"
 
 ///|
 #borrow(path, data)
@@ -42,6 +45,14 @@ fn format_err(err : @minijinja.TemplateError) -> String {
 
 ///|
 fn render_ours(c : Case) -> Outcome {
+  alarm_ffi(30)
+  let rv = render_ours_inner(c)
+  alarm_ffi(0)
+  rv
+}
+
+///|
+fn render_ours_inner(c : Case) -> Outcome {
   let env = @minijinja.Environment::new()
   env.set_undefined_behavior(
     match c.undefined {
@@ -55,6 +66,10 @@ fn render_ours(c : Case) -> Outcome {
   env.set_lstrip_blocks(c.lstrip_blocks)
   env.set_keep_trailing_newline(c.keep_trailing_newline)
   env.set_recursion_limit(100)
+  if c.contrib {
+    @contrib.add_to_environment(env)
+    env.set_unknown_method_callback(@contrib.unknown_method_callback)
+  }
   try {
     let ctx = @minijinja.Value::from_json_str(c.ctx_json())
     for t in c.extra {
@@ -82,6 +97,7 @@ fn Case::request(self : Case) -> String {
     "trim_blocks": self.trim_blocks.to_json(),
     "lstrip_blocks": self.lstrip_blocks.to_json(),
     "keep_trailing_newline": self.keep_trailing_newline.to_json(),
+    "contrib": self.contrib.to_json(),
   }
   j.stringify()
 }
@@ -91,7 +107,20 @@ let oracle_path : Ref[String] = { val: "", }
 
 ///|
 fn render_oracle(c : Case) -> Outcome {
-  let line = @utf8.decode_lossy(oracle_query_ffi(@utf8.encode(c.request())))
+  write_file_ffi(last_case_path, @utf8.encode(c.describe()))
+  let line = @utf8.decode_lossy(
+    oracle_query_ffi(@utf8.encode(c.request()), 5000),
+  )
+  if line == "TIMEOUT" {
+    write_file_ffi(
+      c_str("_build/difftest_oracle_timeout.txt"),
+      @utf8.encode(c.describe()),
+    )
+    if oracle_start_ffi(c_str(oracle_path.val)) != 0 {
+      abort("cannot restart the oracle")
+    }
+    return Crashed("oracle timed out (5s)")
+  }
   if line.is_empty() {
     // the oracle aborted (for instance on an allocation failure)
     write_file_ffi(
@@ -120,7 +149,7 @@ let last_case_path : Bytes = c_str("_build/difftest_last_case.txt")
 ///|
 fn Case::describe(self : Case) -> String {
   "name=\{self.name} undefined=\{self.undefined} trim_blocks=\{self.trim_blocks} " +
-  "lstrip_blocks=\{self.lstrip_blocks} keep_trailing_newline=\{self.keep_trailing_newline}\n" +
+  "lstrip_blocks=\{self.lstrip_blocks} keep_trailing_newline=\{self.keep_trailing_newline} contrib=\{self.contrib}\n" +
   "ctx=\{self.ctx_json()}\n" +
   self.extra.map(t => "--- \{t.0}\n\{body_source(t.1)}\n").join("") +
   "--- source\n\{self.source()}\n---"
@@ -129,8 +158,11 @@ fn Case::describe(self : Case) -> String {
 ///|
 /// Runs both engines; returns `None` if they agree.
 fn compare(c : Case) -> (Outcome, Outcome)? {
-  write_file_ffi(last_case_path, @utf8.encode(c.describe()))
-  let theirs = render_oracle(c)
+  compare_with(c, render_oracle(c))
+}
+
+///|
+fn compare_with(c : Case, theirs : Outcome) -> (Outcome, Outcome)? {
   // A Rust panic is an upstream bug, not a porting divergence.
   if theirs is Crashed(_) {
     return None
@@ -214,7 +246,8 @@ fn survey(
     if !c.extra.is_empty() {
       multi += 1
     }
-    match render_oracle(c) {
+    let theirs = render_oracle(c)
+    match theirs {
       Rendered(_) => rendered += 1
       Failed(msg) => {
         let kind = if msg.has_prefix("syntax error") {
@@ -226,15 +259,17 @@ fn survey(
       }
       Crashed(_) => ()
     }
-    if render_oracle(c) is Crashed(msg) {
+    if theirs is Crashed(msg) {
       crashes += 1
-      let small = shrink_while(c, 200, x => render_oracle(x) is Crashed(_))
+      // each timed out candidate costs the full timeout, so shrink less
+      let steps = if msg.contains("timed out") { 25 } else { 200 }
+      let small = shrink_while(c, steps, x => render_oracle(x) is Crashed(_))
       println(
         "=== upstream crash (case \{i}): \{msg}\n\{small.describe()}\n  ours: \{render_ours(small).show()}\n",
       )
       continue
     }
-    guard compare(c) is Some(_) else { continue }
+    guard compare_with(c, theirs) is Some(_) else { continue }
     mismatches += 1
     let small = shrink_failure(c, 200)
     guard compare(small) is Some((ours, theirs)) else { continue }

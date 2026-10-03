@@ -382,7 +382,10 @@ impl @quickcheck.Shrink for Case with fn shrink(self) {
     rv.push({ ..self, extra, })
   }
   for i in 0..<self.ctx.length() {
-    rv.push({ ..self, ctx: removed(self.ctx, i), })
+    // the seed keeps contrib's random functions deterministic
+    if self.ctx[i].0 != "RAND_SEED" {
+      rv.push({ ..self, ctx: removed(self.ctx, i), })
+    }
   }
   for ctx in shrink_each(self.ctx, kv => shrink_json(kv.1).map(v => (kv.0, v))) {
     rv.push({ ..self, ctx, })
@@ -398,6 +401,9 @@ impl @quickcheck.Shrink for Case with fn shrink(self) {
   }
   if self.keep_trailing_newline {
     rv.push({ ..self, keep_trailing_newline: false, })
+  }
+  if self.contrib {
+    rv.push({ ..self, contrib: false, })
   }
   if self.name != "t.txt" {
     rv.push({ ..self, name: "t.txt", })

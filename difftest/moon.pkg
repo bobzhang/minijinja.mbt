@@ -1,5 +1,6 @@
 import {
   "bobzhang/minijinja",
+  "bobzhang/minijinja/contrib",
   "bobzhang/minijinja/internal/unicode",
   "bobzhang/minijinja/internal/rfmt",
   "moonbitlang/core/quickcheck",

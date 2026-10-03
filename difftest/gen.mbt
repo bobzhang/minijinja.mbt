@@ -8,6 +8,7 @@ priv struct G {
   mut loop_depth : Int
   mut in_macro : Bool
   mut counter : Int
+  contrib : Bool
 }
 
 ///|
@@ -468,6 +469,9 @@ fn G::gen_expr(self : G, depth : Int) -> Expr {
   if depth <= 0 || self.budget <= 0 {
     return self.gen_atom()
   }
+  if self.contrib && self.chance(20) {
+    return self.gen_contrib_call(depth)
+  }
   match self.weighted([25, 14, 4, 16, 6, 6, 5, 3, 7, 4, 5, 5]) {
     0 => self.gen_atom()
     1 =>
@@ -529,7 +533,12 @@ fn G::gen_expr(self : G, depth : Int) -> Expr {
       }
       Slice(self.gen_expr(depth - 1), part(), part(), part())
     }
-    8 => self.gen_call(depth)
+    8 =>
+      if self.contrib && self.chance(60) {
+        self.gen_contrib_call(depth)
+      } else {
+        self.gen_call(depth)
+      }
     9 =>
       Cond(
         self.gen_expr(depth - 1),
@@ -994,8 +1003,12 @@ fn gen_case(size : Int, rs : @splitmix.RandomState) -> Case {
     loop_depth: 0,
     in_macro: false,
     counter: 0,
+    contrib: rs.next_uint(limit=100) < 30,
   }
   let ctx = g.gen_context()
+  if g.contrib {
+    ctx.push(("RAND_SEED", JNum(g.choose(["1", "42", "12345", "9999999999"]))))
+  }
   let depth = 2 + size / 40
   let name = g.choose([
     "t.txt", "t.txt", "t.html", "t.html", "t.json", "t.yaml", "t.xml",
@@ -1017,10 +1030,192 @@ fn gen_case(size : Int, rs : @splitmix.RandomState) -> Case {
     trim_blocks: g.chance(25),
     lstrip_blocks: g.chance(25),
     keep_trailing_newline: g.chance(25),
+    contrib: g.contrib,
   }
 }
 
 ///|
 impl @quickcheck.Arbitrary for Case with fn arbitrary(size, rs) {
   gen_case(size, rs)
+}
+
+///|
+let contrib_filter_names : Array[String] = [
+  "pluralize", "filesizeformat", "truncate", "striptags", "wordcount", "wordwrap",
+  "random",
+]
+
+///|
+let string_methods : Array[String] = [
+  "upper", "lower", "islower", "isupper", "isspace", "isdigit", "isnumeric", "isalnum",
+  "isalpha", "isascii", "strip", "lstrip", "rstrip", "replace", "title", "split",
+  "splitlines", "capitalize", "count", "find", "rfind", "format", "startswith", "endswith",
+  "join",
+]
+
+///|
+/// Arguments for a contrib filter.
+fn G::contrib_filter_args(
+  self : G,
+  name : String,
+) -> (Array[Expr], Array[(String, Expr)]) {
+  let bool_lit = () => Expr::Lit(self.choose(["true", "false"]))
+  match name {
+    "pluralize" =>
+      (
+        Array::makei(self.pick(3), _ => {
+          Expr::Str(self.choose(["y", "ies", "", "s", "es"]))
+        }),
+        [],
+      )
+    "filesizeformat" => (self.maybe(40, () => [bool_lit()]), [])
+    "truncate" =>
+      (
+        [],
+        cat([
+          self.maybe(70, () => {
+            [
+              (
+                "length",
+                Expr::Lit(self.choose(["3", "5", "10", "20", "0", "255"])),
+              ),
+            ]
+          }),
+          self.maybe(30, () => [("killwords", bool_lit())]),
+          self.maybe(30, () => {
+            [("end", Expr::Str(self.choose(["...", "", "~", "…"])))]
+          }),
+          self.maybe(30, () => {
+            [("leeway", Expr::Lit(self.choose(["0", "1", "5"])))]
+          }),
+        ]),
+      )
+    "wordwrap" =>
+      (
+        [],
+        cat([
+          self.maybe(70, () => {
+            [("width", Expr::Lit(self.choose(["3", "5", "10", "1", "79"])))]
+          }),
+          self.maybe(30, () => [("break_long_words", bool_lit())]),
+          self.maybe(30, () => [("break_on_hyphens", bool_lit())]),
+          self.maybe(30, () => {
+            [("wrapstring", Expr::Str(self.choose(["<br>", "\n", " | "])))]
+          }),
+        ]),
+      )
+    _ => ([], [])
+  }
+}
+
+///|
+/// A pycompat method call or a contrib global.
+fn G::gen_contrib_call(self : G, depth : Int) -> Expr {
+  let str_arg = () => {
+    Expr::Str(self.choose(["a", " ", ",", "", "l", "o", "{}", "-", "ab"]))
+  }
+  match self.weighted([45, 15, 8, 8, 8, 8, 8]) {
+    0 => {
+      let m = self.choose(string_methods)
+      let args : Array[Expr] = match m {
+        "split" | "strip" | "lstrip" | "rstrip" =>
+          cat([
+            self.maybe(60, () => [str_arg()]),
+            if m == "split" {
+              self.maybe(30, () => {
+                [Expr::Lit(self.choose(["0", "1", "2", "-1"]))]
+              })
+            } else {
+              []
+            },
+          ])
+        "replace" =>
+          cat([
+            [str_arg(), str_arg()],
+            self.maybe(30, () => [Expr::Lit(self.choose(["0", "1", "-1"]))]),
+          ])
+        "count" | "find" | "rfind" | "startswith" | "endswith" => [str_arg()]
+        "join" => [self.gen_expr(depth - 1)]
+        "format" => self.gen_exprs(self.pick(3), depth - 1)
+        "splitlines" =>
+          self.maybe(30, () => [Expr::Lit(self.choose(["true", "false"]))])
+        _ => []
+      }
+      let receiver = if self.chance(60) {
+        Expr::Str(self.gen_string())
+      } else {
+        self.gen_expr(depth - 1)
+      }
+      Call(Attr(receiver, m), args, [])
+    }
+    1 => {
+      let m = self.choose(["keys", "values", "items", "get", "count"])
+      let args : Array[Expr] = match m {
+        "get" =>
+          cat([
+            [Expr::Str(self.choose(["a", "b", "name", "missing"]))],
+            self.maybe(40, () => [self.gen_atom()]),
+          ])
+        "count" => [self.gen_atom()]
+        _ => []
+      }
+      Call(
+        Attr(
+          self.choose([
+            Var("d"),
+            Var("users"),
+            Var("items"),
+            Var("words"),
+            Var("nested"),
+          ]),
+          m,
+        ),
+        args,
+        [],
+      )
+    }
+    2 => {
+      let c = Call(Var("cycler"), [List(self.gen_exprs(self.pick(3) + 1, 0))], [])
+      match self.pick(3) {
+        0 => Call(Attr(c, "next"), [], [])
+        1 => Attr(c, "current")
+        _ => c
+      }
+    }
+    3 =>
+      Call(
+        Var("joiner"),
+        self.maybe(60, () => [Expr::Str(self.choose([", ", "|", ""]))]),
+        [],
+      )
+    4 =>
+      Call(
+        Var("randrange"),
+        Array::makei(self.pick(3) + 1, _ => {
+          Expr::Lit(self.choose(["0", "1", "5", "10", "-3", "100"]))
+        }),
+        [],
+      )
+    5 =>
+      Call(
+        Var("lipsum"),
+        self.maybe(70, () => [Expr::Lit(self.choose(["1", "2", "0"]))]),
+        cat([
+          self.maybe(30, () => {
+            [("html", Expr::Lit(self.choose(["true", "false"])))]
+          }),
+          self.maybe(30, () => {
+            [("min", Expr::Lit(self.choose(["1", "5", "20"])))]
+          }),
+          self.maybe(30, () => {
+            [("max", Expr::Lit(self.choose(["2", "10", "100"])))]
+          }),
+        ]),
+      )
+    _ => {
+      let name = self.choose(contrib_filter_names)
+      let (args, kwargs) = self.contrib_filter_args(name)
+      Filter(self.gen_expr(depth - 1), name, args, kwargs)
+    }
+  }
 }

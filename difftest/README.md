@@ -24,7 +24,9 @@ moon run --target native --release difftest -- survey 3000 1
 Modes (`difftest -- <mode> [count] [seed] [max_size]`):
 
 * `survey`: runs `count` cases, shrinks every mismatch and prints the
-  distinct minimal ones (and upstream crashes separately).
+  distinct minimal ones (and upstream crashes and hangs separately: the
+  oracle gets 5 seconds per case and is restarted when it dies or hangs;
+  a watchdog stops the run if the port itself hangs).
 * `check`: runs `@quickcheck.check` with shrinking and stops at the first
   counterexample.
 * `show`: prints generated templates.
@@ -50,6 +52,9 @@ Cases where upstream misbehaves and the port deliberately does not follow:
 * `{{ [][::-1] }}` and `{{ ''[::-1] }}` (reverse slices of empty sequences
   and strings) panic upstream with an out of bounds index.  The port returns
   an empty result.
+* `{{ ''.count('') }}` (contrib pycompat) loops forever upstream on an
+  empty pattern.  The port returns the character count plus one, like
+  Python.
 * `{{ x is divisibleby(0) }}` panics upstream (remainder by zero).  The
   port returns false.
 * `{{ 1|batch(1e16) }}`, `{{ 1|indent(huge) }}` (for example `indent(2 ** 63)`) aborts upstream with

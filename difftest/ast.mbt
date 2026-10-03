@@ -77,6 +77,8 @@ struct Case {
   trim_blocks : Bool
   lstrip_blocks : Bool
   keep_trailing_newline : Bool
+  /// Enables minijinja-contrib (filters, globals and pycompat methods).
+  contrib : Bool
 } derive(Debug)
 
 ///|
