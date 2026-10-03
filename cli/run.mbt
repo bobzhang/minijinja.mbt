@@ -2,7 +2,7 @@
 
 ///|
 /// The version printed by `--version`.
-pub let version : String = "0.1.0"
+pub let version : String = "0.1.1"
 
 ///|
 /// The name of stdin / stdout in file arguments.

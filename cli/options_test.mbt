@@ -21,7 +21,7 @@ async test "help and version" {
         #|success: true
         #|exit_code: 0
         #|----- stdout -----
-        #|minijinja-cli 0.1.0
+        #|minijinja-cli 0.1.1
         #|
         #|----- stderr -----
       ),
