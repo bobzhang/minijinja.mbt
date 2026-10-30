@@ -1,6 +1,6 @@
 ///|
 /// Returns `true` if `s` contains `pat` at UTF-16 offset `off`.
-fn starts_with_at(s : String, off : Int, pat : String) -> Bool {
+fn starts_with_at(s : String, off : Int32, pat : String) -> Bool {
   let plen = pat.length()
   if off < 0 || off + plen > s.length() {
     return false
@@ -16,7 +16,7 @@ fn starts_with_at(s : String, off : Int, pat : String) -> Bool {
 ///|
 /// Finds `needle` in `haystack` starting at `off`.  Returns the offset
 /// relative to `off` (like `memstr` on a sub slice).
-fn find_from(haystack : String, off : Int, needle : String) -> Int? {
+fn find_from(haystack : String, off : Int32, needle : String) -> Int32? {
   let nlen = haystack.length()
   let plen = needle.length()
   if plen == 0 {
@@ -34,7 +34,7 @@ fn find_from(haystack : String, off : Int, needle : String) -> Int? {
 
 ///|
 /// Returns the code unit at `idx` or `-1` when out of bounds.
-fn unit_at(s : String, idx : Int) -> Int {
+fn unit_at(s : String, idx : Int32) -> Int32 {
   if idx >= 0 && idx < s.length() {
     s[idx].to_int()
   } else {
@@ -44,7 +44,7 @@ fn unit_at(s : String, idx : Int) -> Int {
 
 ///|
 /// Decodes the character starting at UTF-16 offset `idx`.
-fn char_at(s : String, idx : Int) -> Char? {
+fn char_at(s : String, idx : Int32) -> Char? {
   if idx < 0 || idx >= s.length() {
     return None
   }
@@ -63,15 +63,15 @@ fn char_at(s : String, idx : Int) -> Char? {
 /// Port of Rust's `char::is_whitespace` (Unicode `White_Space`).
 fn is_rust_whitespace(c : Char) -> Bool {
   match c.to_int() {
-    0x09..=0x0D | 0x20 | 0x85 | 0xA0 | 0x1680 => true
-    0x2000..=0x200A | 0x2028 | 0x2029 | 0x202F | 0x205F | 0x3000 => true
+    0x09..<=0x0D | 0x20 | 0x85 | 0xA0 | 0x1680 => true
+    0x2000..<=0x200A | 0x2028 | 0x2029 | 0x202F | 0x205F | 0x3000 => true
     _ => false
   }
 }
 
 ///|
 /// Port of Rust's `u8::is_ascii_whitespace` applied to a code unit.
-fn is_ascii_ws_unit(u : Int) -> Bool {
+fn is_ascii_ws_unit(u : Int32) -> Bool {
   u == 0x20 || u == 0x09 || u == 0x0A || u == 0x0C || u == 0x0D
 }
 
@@ -91,7 +91,7 @@ fn trim_end_view(s : StringView) -> StringView {
       break
     }
   }
-  s.view(end_offset=end)
+  s[:end]
 }
 
 ///|
@@ -110,7 +110,7 @@ fn trim_start_view(s : StringView) -> StringView {
       break
     }
   }
-  s.view(start_offset=start)
+  s[start:]
 }
 
 ///|
@@ -121,14 +121,14 @@ fn trim_view(s : StringView) -> StringView {
 
 ///|
 /// Number of Unicode scalars in a string.
-fn scalar_count(s : StringView) -> Int {
+fn scalar_count(s : StringView) -> Int32 {
   s.char_length()
 }
 
 ///|
 priv struct Unescaper {
   out : StringBuilder
-  mut pending_surrogate : Int
+  mut pending_surrogate : Int32
 }
 
 ///|
@@ -140,7 +140,7 @@ fn Unescaper::push_char(self : Unescaper, c : Char) -> Unit raise TemplateError 
 }
 
 ///|
-fn Unescaper::push_u16(self : Unescaper, c : Int) -> Unit raise TemplateError {
+fn Unescaper::push_u16(self : Unescaper, c : Int32) -> Unit raise TemplateError {
   let is_surrogate = c >= 0xD800 && c <= 0xDFFF
   if self.pending_surrogate == 0 && !is_surrogate {
     self.out.write_char(c.unsafe_to_char())
@@ -161,11 +161,11 @@ fn Unescaper::push_u16(self : Unescaper, c : Int) -> Unit raise TemplateError {
 }
 
 ///|
-fn hex_value(c : Char) -> Int {
+fn hex_value(c : Char) -> Int32 {
   match c {
-    '0'..='9' => c.to_int() - '0'.to_int()
-    'a'..='f' => c.to_int() - 'a'.to_int() + 10
-    'A'..='F' => c.to_int() - 'A'.to_int() + 10
+    '0'..<='9' => c.to_int() - '0'.to_int()
+    'a'..<='f' => c.to_int() - 'a'.to_int() + 10
+    'A'..<='F' => c.to_int() - 'A'.to_int() + 10
     _ => -1
   }
 }
@@ -221,7 +221,7 @@ fn unescape(s : StringView) -> String raise TemplateError {
         }
         u.push_char((h1 * 16 + h2).unsafe_to_char())
       }
-      '0'..='7' => {
+      '0'..<='7' => {
         let mut val = d.to_int() - '0'.to_int()
         let mut count = 0
         while count < 2 && i < n && chars[i] >= '0' && chars[i] <= '7' {

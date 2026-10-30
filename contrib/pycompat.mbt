@@ -395,7 +395,7 @@ fn rust_replacen(
   s : String,
   old : String,
   new : String,
-  limit : Int?,
+  limit : Int32?,
 ) -> String {
   let limit = limit.unwrap_or(0x7FFFFFFF)
   let rv = StringBuilder()

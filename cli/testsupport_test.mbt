@@ -5,7 +5,7 @@
 ///|
 priv struct TestDir {
   path : String
-  mut counter : Int
+  mut counter : Int32
 }
 
 ///|
@@ -23,7 +23,7 @@ async fn with_test_dir(f : async (TestDir) -> Unit) -> Unit {
 async fn TestDir::file(
   self : TestDir,
   contents : String,
-  ext? : String = "",
+  ext~ : String = "",
 ) -> String {
   self.counter += 1
   let path = "\{self.path}/minijinja-testfile--\{self.counter}\{ext}"
@@ -37,8 +37,8 @@ async fn TestDir::file(
 async fn TestDir::run(
   self : TestDir,
   args : Array[String],
-  stdin? : String = "",
-  env? : Map[String, String] = Map([]),
+  stdin~ : String = "",
+  env~ : Map[String, String] = Map([]),
 ) -> String {
   let outcome = @cli.run(args, env_vars=env, cwd=self.path, stdin=() => {
     @utf8.encode(stdin)
@@ -75,8 +75,7 @@ fn filter_snapshot(s : String) -> String {
 fn filter_line(line : String) -> String {
   // (?m)(non-existing template).*$
   if line.find("non-existing template") is Some(idx) {
-    return line.view(end_offset=idx).to_owned() +
-      "non-existing template [FILENAME HERE]"
+    return line[:idx].to_owned() + "non-existing template [FILENAME HERE]"
   }
   // (?m)^-+ (minijinja-testfile--\S+) -+$
   if line.has_prefix("-") &&
@@ -85,15 +84,14 @@ fn filter_line(line : String) -> String {
     return "--- [TEMPLATE] ---"
   }
   // \(in .*minijinja-testfile--.*?:(\d+)\)
-  if line.find("(in ") is Some(start) &&
-    line.view(start_offset=start).find(")") is Some(len) {
-    let inner = line.view(start_offset=start + 4, end_offset=start + len)
+  if line.find("(in ") is Some(start) && line[start:].find(")") is Some(len) {
+    let inner = line[start + 4:start + len]
     if inner.find("minijinja-testfile--") is Some(_) &&
       inner.rev_find(":") is Some(colon) {
-      let lineno = inner.view(start_offset=colon + 1)
-      return line.view(end_offset=start).to_owned() +
+      let lineno = inner[colon + 1:]
+      return line[:start].to_owned() +
         "(in [TEMPLATE]:\{lineno})" +
-        line.view(start_offset=start + len + 1).to_owned()
+        line[start + len + 1:].to_owned()
     }
   }
   line

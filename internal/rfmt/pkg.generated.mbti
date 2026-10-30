@@ -2,17 +2,17 @@
 package "bobzhang/minijinja/internal/rfmt"
 
 // Values
-pub fn exact_decimal(Double) -> (String, Int)
+pub fn exact_decimal(Double) -> (String, Int32)
 
 pub fn f64_debug(Double) -> String
 
 pub fn f64_display(Double) -> String
 
-pub fn format_exp_parts(Double, Int) -> (String, Int)
+pub fn format_exp_parts(Double, Int32) -> (String, Int32)
 
-pub fn format_fixed(Double, Int) -> String
+pub fn format_fixed(Double, Int32) -> String
 
-pub fn round_digits(String, Int, Int) -> (String, Int)
+pub fn round_digits(String, Int32, Int32) -> (String, Int32)
 
 pub fn str_debug(StringView) -> String
 

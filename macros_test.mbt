@@ -5,7 +5,7 @@
 // `Environment::render_str` and plain arrays respectively.
 
 ///|
-fn mval(i : Int) -> @minijinja.Value {
+fn mval(i : Int32) -> @minijinja.Value {
   @minijinja.Value::from_int(i)
 }
 

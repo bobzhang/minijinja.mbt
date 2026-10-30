@@ -12,7 +12,7 @@ let stdin_stdout : String = "-"
 /// The result of running the command line tool.
 pub(all) struct Outcome {
   /// The process exit code.
-  exit_code : Int
+  exit_code : Int32
   /// Everything written to stdout.
   stdout : String
   /// Everything written to stderr.
@@ -93,7 +93,7 @@ pub async fn run(
 }
 
 ///|
-async fn execute(io : Io, args : ArrayView[String]) -> Int {
+async fn execute(io : Io, args : ArrayView[String]) -> Int32 {
   let matches = match parse_args(args) {
     Run(matches) => matches
     ShortHelp => {
@@ -320,13 +320,13 @@ fn print_expr_out(
   rv : @minijinja.Value,
   config : Config,
   out : StringBuilder,
-) -> Int raise {
+) -> Int32 raise {
   match config.expr_out {
     "print" => out.write_string("\{rv}\n")
     "json" => out.write_string("\{rv.to_json_string()}\n")
     "json-pretty" => out.write_string("\{rv.to_json_string(indent=2)}\n")
     "status" => {
-      let n : Int? = Some(rv.convert()) catch { _ => None }
+      let n : Int32? = Some(rv.convert()) catch { _ => None }
       return match n {
         Some(n) => n
         None => if rv.is_true() { 0 } else { 1 }

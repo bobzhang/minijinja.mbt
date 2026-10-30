@@ -1,5 +1,5 @@
 ///|
-fn write_hex_escape(sb : StringBuilder, code : Int) -> Unit {
+fn write_hex_escape(sb : StringBuilder, code : Int32) -> Unit {
   sb.write_string("\\u{")
   sb.write_string(code.to_string(radix=16))
   sb.write_char('}')

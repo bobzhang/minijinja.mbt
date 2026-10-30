@@ -1,7 +1,7 @@
 // Ported from minijinja/tests/test_value.rs.
 
 ///|
-fn vt_ints(xs : Array[Int]) -> @minijinja.Value {
+fn vt_ints(xs : Array[Int32]) -> @minijinja.Value {
   @minijinja.Value::from_array(xs.map(@minijinja.Value::from_int))
 }
 
@@ -236,9 +236,9 @@ test "value: value_by_index" {
 
 ///|
 struct VtMapPoint {
-  x : Int
-  y : Int
-  z : Int
+  x : Int32
+  y : Int32
+  z : Int32
 }
 
 ///|
@@ -284,9 +284,9 @@ test "value: map_object_iteration_and_indexing" {
 
 ///|
 struct VtSeqPoint {
-  x : Int
-  y : Int
-  z : Int
+  x : Int32
+  y : Int32
+  z : Int32
 }
 
 ///|
@@ -370,7 +370,7 @@ test "value: value_object_interface" {
 
 ///|
 struct VtThing {
-  moo : Int
+  moo : Int32
 }
 
 ///|
@@ -387,7 +387,7 @@ test "value: obj_downcast" {
 
 ///|
 struct VtSeqThing {
-  moo : Int
+  moo : Int32
 }
 
 ///|
@@ -815,7 +815,7 @@ test "value: seq_object_borrow" {
 }
 
 ///|
-fn vt_range(n : Int) -> Iter[@minijinja.Value] {
+fn vt_range(n : Int32) -> Iter[@minijinja.Value] {
   Array::makei(n, i => @minijinja.Value::from_int(i)).iter()
 }
 
@@ -1357,7 +1357,7 @@ test "value: bytes" {
 
 ///|
 struct VtCmpX {
-  v : Int
+  v : Int32
 }
 
 ///|
@@ -1399,7 +1399,7 @@ test "value: custom_object_compare" {
 
 ///|
 struct NumObj {
-  n : Int
+  n : Int32
 }
 
 ///|
@@ -1432,7 +1432,7 @@ impl @minijinja.Object for NumObj with fn get_value(self, key) {
 
 ///|
 struct Opaque {
-  n : Int
+  n : Int32
 }
 
 ///|

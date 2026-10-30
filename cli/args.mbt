@@ -23,9 +23,9 @@ fn opt(
   long : String,
   short? : Char,
   value? : String,
-  greedy? : Bool = false,
-  append? : Bool = false,
-  possible_values? : Array[String] = [],
+  greedy~ : Bool = false,
+  append~ : Bool = false,
+  possible_values~ : Array[String] = [],
 ) -> OptSpec {
   { long, short, value_name: value, greedy, append, possible_values, }
 }
@@ -115,7 +115,7 @@ priv enum ParseOutcome {
 
 ///|
 /// Formats a clap style usage error.
-fn usage_error(msg : String, with_usage? : Bool = true) -> CliError {
+fn usage_error(msg : String, with_usage~ : Bool = true) -> CliError {
   let sb = StringBuilder()
   sb.write_string("error: \{msg}\n\n")
   if with_usage {
@@ -204,7 +204,7 @@ fn parse_args(args : ArrayView[String]) -> ParseOutcome raise CliError {
 
   // Consumes the value(s) for `spec` starting at index `i` (the argument
   // after the option) and returns the index of the next unprocessed argument.
-  fn take_values(spec : OptSpec, i : Int) -> Int raise CliError {
+  fn take_values(spec : OptSpec, i : Int32) -> Int32 raise CliError {
     guard i < args.length() && !looks_like_flag(args[i]) else {
       raise missing_value(spec)
     }
@@ -229,13 +229,9 @@ fn parse_args(args : ArrayView[String]) -> ParseOutcome raise CliError {
       }
       break
     } else if arg.has_prefix("--") {
-      let body = arg.view(start_offset=2)
+      let body = arg[2:]
       let (name, inline_value) = match body.find("=") {
-        Some(idx) =>
-          (
-            body.view(end_offset=idx).to_owned(),
-            Some(body.view(start_offset=idx + 1).to_owned()),
-          )
+        Some(idx) => (body[:idx].to_owned(), Some(body[idx + 1:].to_owned()))
         None => (body.to_owned(), None)
       }
       guard find_long(name) is Some(spec) else {
@@ -259,7 +255,7 @@ fn parse_args(args : ArrayView[String]) -> ParseOutcome raise CliError {
       }
     } else if looks_like_flag(arg) {
       // a cluster of short flags, the last of which may take a value
-      let chars = arg.view(start_offset=1).to_array()
+      let chars = arg[1:].to_array()
       let mut k = 0
       while k < chars.length() {
         let c = chars[k]
@@ -278,7 +274,7 @@ fn parse_args(args : ArrayView[String]) -> ParseOutcome raise CliError {
         }
         let mut rest = String::from_array(chars[k:])
         if rest.has_prefix("=") {
-          rest = rest.view(start_offset=1).to_owned()
+          rest = rest[1:].to_owned()
         }
         if rest != "" || k < chars.length() {
           add_value(spec, rest)

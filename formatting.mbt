@@ -22,7 +22,7 @@ priv enum PathElem {
 ///|
 priv enum FieldName {
   Kwarg(String, Array[PathElem])
-  Positional(Int, Array[PathElem])
+  Positional(Int32, Array[PathElem])
   MappingKey(String)
 }
 
@@ -92,13 +92,13 @@ priv struct FormatSpec {
   space_before_positive_num : Bool
   alternate_form : Bool
   zero_padded : Bool
-  width : Int?
+  width : Int32?
   integer_grouping : Separator?
-  precision : Int?
+  precision : Int32?
   ty : FmtType
   format_style : FormatStyle
   /// UTF-8 byte offset within the input string where this spec begins
-  location : Int
+  location : Int32
 }
 
 ///|
@@ -225,7 +225,7 @@ fn FormatSpec::format_str(
 
 ///|
 /// Formats the number in scientific form and returns mantissa and exponent.
-fn mantissa_and_exp(val : FNum, precision : Int) -> (String, Int) {
+fn mantissa_and_exp(val : FNum, precision : Int32) -> (String, Int32) {
   match val {
     FFloat(f) => @rfmt.format_exp_parts(f, precision)
     FInt(i) => {
@@ -244,7 +244,7 @@ fn mantissa_and_exp(val : FNum, precision : Int) -> (String, Int) {
         trail -= 1
       }
       let (digits, point) = @rfmt.round_digits(
-        s.view(end_offset=trail).to_owned(),
+        s[:trail].to_owned(),
         s.length(),
         precision + 1,
       )
@@ -254,11 +254,9 @@ fn mantissa_and_exp(val : FNum, precision : Int) -> (String, Int) {
         digits
       }
       let mantissa = if precision > 0 {
-        padded.view(end_offset=1).to_owned() +
-        "." +
-        padded.view(start_offset=1, end_offset=precision + 1).to_owned()
+        padded[:1].to_owned() + "." + padded[1:precision + 1].to_owned()
       } else {
-        padded.view(end_offset=1).to_owned()
+        padded[:1].to_owned()
       }
       (mantissa, point - 1)
     }
@@ -266,7 +264,7 @@ fn mantissa_and_exp(val : FNum, precision : Int) -> (String, Int) {
 }
 
 ///|
-fn format_fixed_num(val : FNum, precision : Int) -> String {
+fn format_fixed_num(val : FNum, precision : Int32) -> String {
   match val {
     FFloat(f) => @rfmt.format_fixed(f, precision)
     // Rust ignores the precision when formatting integers
@@ -275,7 +273,7 @@ fn format_fixed_num(val : FNum, precision : Int) -> String {
 }
 
 ///|
-fn format_exp_suffix(exp : Int) -> String {
+fn format_exp_suffix(exp : Int32) -> String {
   let sign = if exp < 0 { "-" } else { "+" }
   let abs = if exp < 0 { -exp } else { exp }
   let digits = abs.to_string()
@@ -301,7 +299,7 @@ fn FormatSpec::remove_insignificants(self : FormatSpec, num : String) -> String 
     while end > 0 && num[end - 1] == '.' {
       end -= 1
     }
-    num.view(end_offset=end).to_owned()
+    num[:end].to_owned()
   } else {
     num
   }
@@ -331,10 +329,10 @@ fn FormatSpec::number_in_general_format(
 
 ///|
 /// Groups the digits of a number into chunks separated by `separator`.
-fn group_digits(num : String, separator : Char, group_size : Int) -> String {
+fn group_digits(num : String, separator : Char, group_size : Int32) -> String {
   let prefix_len = num.length() % group_size
   let grouped = StringBuilder()
-  grouped.write_view(num.view(end_offset=prefix_len))
+  grouped.write_view(num[:prefix_len])
   let mut has_content = prefix_len > 0
   let mut i = prefix_len
   while i < num.length() {
@@ -346,7 +344,7 @@ fn group_digits(num : String, separator : Char, group_size : Int) -> String {
     } else {
       num.length()
     }
-    grouped.write_view(num.view(start_offset=i, end_offset=end))
+    grouped.write_view(num[i:end])
     has_content = true
     i = end
   }
@@ -377,12 +375,8 @@ fn FormatSpec::group_decimal_num(self : FormatSpec, number : String) -> String {
   }
   match number.find(".") {
     Some(idx) => {
-      let integer = group_digits(
-        number.view(end_offset=idx).to_owned(),
-        separator,
-        3,
-      )
-      integer + "." + number.view(start_offset=idx + 1).to_owned()
+      let integer = group_digits(number[:idx].to_owned(), separator, 3)
+      integer + "." + number[idx + 1:].to_owned()
     }
     None => group_digits(number, separator, 3)
   }
@@ -547,7 +541,7 @@ fn FormatSpec::format_float(
 fn FormatSpec::apply_zero_padding(
   self : FormatSpec,
   num : String,
-  fill_width : Int,
+  fill_width : Int32,
 ) -> String {
   let (sep, group_width) = match self.integer_grouping {
     Some(Comma) => (',', 3)
@@ -561,7 +555,7 @@ fn FormatSpec::apply_zero_padding(
   let sep_str = sep.to_string()
   let first_separator = match num.find(".") {
     Some(point) =>
-      match num.view(end_offset=point).find(sep_str) {
+      match num[:point].find(sep_str) {
         Some(i) => i
         None => point
       }
@@ -575,13 +569,13 @@ fn FormatSpec::apply_zero_padding(
           }
       }
   }
-  let prefix = num.view(end_offset=first_separator).to_owned()
-  let grouped_suffix = num.view(start_offset=first_separator).to_owned()
+  let prefix = num[:first_separator].to_owned()
+  let grouped_suffix = num[first_separator:].to_owned()
   let zero_padded_prefix = "0".repeat(fill_width) + prefix
   let grouped_prefix = group_digits(zero_padded_prefix, sep, group_width)
   // Trim extra chars from the beginning of the padded and grouped prefix.
   let trim_index = grouped_prefix.length() - prefix.length() - fill_width
-  let grouped_prefix = grouped_prefix.view(start_offset=trim_index).to_owned()
+  let grouped_prefix = grouped_prefix[trim_index:].to_owned()
   (if grouped_prefix.has_prefix(sep_str) { "0" } else { "" }) +
   grouped_prefix +
   grouped_suffix
@@ -649,7 +643,7 @@ fn FormatSpec::apply_padding_with_width(
   self : FormatSpec,
   text : String,
   default_align : Align,
-  curr_width : Int,
+  curr_width : Int32,
 ) -> String {
   guard self.width is Some(min_width) && curr_width < min_width else {
     return text
@@ -687,16 +681,16 @@ fn FormatSpec::apply_padding(
 /// reported in errors are converted to UTF-8 byte offsets like MiniJinja.
 priv struct FmtCursor {
   source : String
-  mut pos : Int
+  mut pos : Int32
 }
 
 ///|
-fn FmtCursor::byte_pos(self : FmtCursor) -> Int {
-  utf8_len(self.source.view(end_offset=self.pos).to_owned())
+fn FmtCursor::byte_pos(self : FmtCursor) -> Int32 {
+  utf8_len(self.source[:self.pos].to_owned())
 }
 
 ///|
-fn FmtCursor::peek(self : FmtCursor) -> Int {
+fn FmtCursor::peek(self : FmtCursor) -> Int32 {
   unit_at(self.source, self.pos)
 }
 
@@ -748,7 +742,7 @@ fn FmtCursor::is_end(self : FmtCursor) -> Bool {
 ///|
 priv enum FmtToken {
   Literal(String)
-  Replace(FieldName?, FormatSpec, Int)
+  Replace(FieldName?, FormatSpec, Int32)
 }
 
 ///|
@@ -785,9 +779,7 @@ fn fmt_next_token(
         offset += 1
         break
       } else {
-        let byte_offset = utf8_len(
-          src.view(start_offset=start, end_offset=start + offset).to_owned(),
-        )
+        let byte_offset = utf8_len(src[start:start + offset].to_owned())
         raise fmt_err(
           "invalid single '}' in format string at offset \{byte_offset}; use escape sequence '}}'",
         )
@@ -797,7 +789,7 @@ fn fmt_next_token(
     }
   }
   if offset > 0 {
-    let lit = src.view(start_offset=start, end_offset=start + offset).to_owned()
+    let lit = src[start:start + offset].to_owned()
     cursor.pos += offset
     if escape_seq {
       cursor.pos += 1
@@ -814,7 +806,7 @@ fn fmt_next_token(
 }
 
 ///|
-fn fmt_parse_number(cursor : FmtCursor) -> Int? raise TemplateError {
+fn fmt_parse_number(cursor : FmtCursor) -> Int32? raise TemplateError {
   let start = cursor.pos
   while is_digit_unit(cursor.peek()) {
     cursor.pos += 1
@@ -822,7 +814,7 @@ fn fmt_parse_number(cursor : FmtCursor) -> Int? raise TemplateError {
   if cursor.pos == start {
     return None
   }
-  let s = cursor.source.view(start_offset=start, end_offset=cursor.pos)
+  let s = cursor.source[start:cursor.pos]
   match parse_usize(s) {
     Some(n) => Some(n)
     None =>
@@ -887,7 +879,7 @@ fn fmt_parse_till(
       cursor.pos += 1
     }
   }
-  cursor.source.view(start_offset=start, end_offset=cursor.pos - 1).to_owned()
+  cursor.source[start:cursor.pos - 1].to_owned()
 }
 
 ///|
@@ -965,7 +957,7 @@ fn printf_parse_format_spec(
 }
 
 ///|
-fn missing_arg_err(location : Int) -> TemplateError {
+fn missing_arg_err(location : Int32) -> TemplateError {
   fmt_err("missing an argument for format spec at offset '\{location}'")
 }
 
@@ -1082,9 +1074,7 @@ fn str_format_parse_identifier(cursor : FmtCursor) -> String? {
     cursor.pos += 1
   }
   if cursor.pos > start {
-    Some(
-      cursor.source.view(start_offset=start, end_offset=cursor.pos).to_owned(),
-    )
+    Some(cursor.source[start:cursor.pos].to_owned())
   } else {
     None
   }
@@ -1135,7 +1125,7 @@ fn str_format_parse_fill_align(cursor : FmtCursor) -> FillAlign? {
     None => 0
   }
   let maybe_align = char_at(cursor.source, cursor.pos + fill_len)
-  let (consumed, fa) : (Int, FillAlign) = match (maybe_fill, maybe_align) {
+  let (consumed, fa) : (Int32, FillAlign) = match (maybe_fill, maybe_align) {
     (Some(f), Some('<')) => (fill_len + 1, { fill: Some(f), align: Left, })
     (Some(f), Some('>')) => (fill_len + 1, { fill: Some(f), align: Right, })
     (Some(f), Some('^')) => (fill_len + 1, { fill: Some(f), align: Center, })
@@ -1246,7 +1236,7 @@ fn str_format(
 ) -> String raise TemplateError {
   let cursor = { source: format_str, pos: 0, }
   let result = StringBuilder()
-  fn missing(location : Int, source : TemplateError?) -> TemplateError {
+  fn missing(location : Int32, source : TemplateError?) -> TemplateError {
     let err = fmt_err(
       "argument not found for format field at offset \{location}",
     )
@@ -1256,7 +1246,7 @@ fn str_format(
     }
   }
 
-  fn switch_err(location : Int, from : String, to : String) -> TemplateError {
+  fn switch_err(location : Int32, from : String, to : String) -> TemplateError {
     fmt_err(
       "cannot switch from \{from} to \{to} in field at offset \{location}",
     )

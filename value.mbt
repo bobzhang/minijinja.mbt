@@ -99,7 +99,7 @@ pub fn Value::from_bool(b : Bool) -> Value {
 }
 
 ///|
-pub fn Value::from_int(i : Int) -> Value {
+pub fn Value::from_int(i : Int32) -> Value {
   I64(i.to_int64())
 }
 
@@ -383,7 +383,7 @@ pub fn Value::as_object(self : Value) -> DynObject? {
 ///
 /// Strings return the number of Unicode scalar values, bytes the number of
 /// bytes and objects the length of their enumerator (if known).
-pub fn Value::len(self : Value) -> Int? {
+pub fn Value::len(self : Value) -> Int32? {
   match self {
     Str(s, _) => Some(scalar_count(s))
     Bytes(b) => Some(b.length())
@@ -426,7 +426,7 @@ fn Value::get_attr_fast(self : Value, key : String) -> Value? {
 /// Looks up an index of the value.
 pub fn Value::get_item_by_index(
   self : Value,
-  idx : Int,
+  idx : Int32,
 ) -> Value raise TemplateError {
   self.get_item(Value::from_int(idx))
 }
@@ -445,7 +445,7 @@ pub fn Value::get_item(self : Value, key : Value) -> Value raise TemplateError {
 
 ///|
 /// Resolves a (possibly negative) index.
-fn resolve_index(key : Value, len : () -> Int?) -> Int? {
+fn resolve_index(key : Value, len : () -> Int32?) -> Int32? {
   match key.as_i64() {
     Some(i) if i < 0L =>
       match len() {
@@ -735,9 +735,9 @@ fn Value::get_path_or_default(
 
 ///|
 /// Parses a non-negative decimal integer like Rust's `str::parse::<usize>`.
-fn parse_usize(s : StringView) -> Int? {
+fn parse_usize(s : StringView) -> Int32? {
   // like Rust, a single leading `+` is accepted
-  let s = if s.length() > 1 && s[0] == '+' { s.view(start_offset=1) } else { s }
+  let s = if s.length() > 1 && s[0] == '+' { s[1:] } else { s }
   if s.length() == 0 {
     return None
   }
@@ -818,7 +818,7 @@ fn format_f64_display(v : Double) -> String {
 
 ///|
 /// Formats the value like MiniJinja's `Debug` (a Python like repr).
-pub fn Value::debug_string(self : Value, pretty? : Bool = false) -> String {
+pub fn Value::debug_string(self : Value, pretty~ : Bool = false) -> String {
   let f = @rfmt.Formatter::new(alternate=pretty)
   self.fmt_debug(f)
   f.to_string()
@@ -916,7 +916,7 @@ fn python_string_repr(value : String) -> String {
 
 ///|
 /// Port of Rust's `char::is_control` (general category Cc).
-fn is_control_char(cp : Int) -> Bool {
+fn is_control_char(cp : Int32) -> Bool {
   cp < 0x20 || (cp >= 0x7f && cp < 0xa0)
 }
 

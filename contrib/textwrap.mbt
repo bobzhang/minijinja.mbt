@@ -11,16 +11,16 @@
 /// A piece of a line (port of `textwrap::core::Word`).
 priv struct Word {
   /// start of the word
-  start : Int
+  start : Int32
   /// end of the word (exclusive), which is also the start of the trailing
   /// whitespace
-  end : Int
+  end : Int32
   /// end of the trailing whitespace (exclusive)
-  ws_end : Int
+  ws_end : Int32
   /// the penalty string (`""` or `"-"`) added if a line breaks after the word
   penalty : String
   /// cached width in columns
-  width : Int
+  width : Int32
 }
 
 ///|
@@ -36,7 +36,7 @@ fn Word::penalty_width(self : Word) -> Double {
 ///|
 /// Port of `Word::from`: the trailing spaces of `chars[start:stop]` become
 /// the whitespace of the word.
-fn Word::from_range(chars : Array[Char], start : Int, stop : Int) -> Word {
+fn Word::from_range(chars : Array[Char], start : Int32, stop : Int32) -> Word {
   let mut end = stop
   while end > start && chars[end - 1] == ' ' {
     end -= 1
@@ -57,9 +57,9 @@ fn Word::from_range(chars : Array[Char], start : Int, stop : Int) -> Word {
 fn skip_ansi_escape_sequence(
   ch : Char,
   chars : Array[Char],
-  pos : Int,
-  stop : Int,
-) -> Int? {
+  pos : Int32,
+  stop : Int32,
+) -> Int32? {
   if ch != '\u{1b}' {
     return None
   }
@@ -96,7 +96,7 @@ fn skip_ansi_escape_sequence(
 
 ///|
 /// The width of a character without the `unicode-width` feature.
-fn ch_width(ch : Char) -> Int {
+fn ch_width(ch : Char) -> Int32 {
   if ch.to_int() < 0x1100 {
     1
   } else {
@@ -106,7 +106,7 @@ fn ch_width(ch : Char) -> Int {
 
 ///|
 /// Port of `textwrap::core::display_width` for `chars[start:stop]`.
-fn display_width(chars : Array[Char], start : Int, stop : Int) -> Int {
+fn display_width(chars : Array[Char], start : Int32, stop : Int32) -> Int32 {
   let mut width = 0
   let mut pos = start
   while pos < stop {
@@ -142,7 +142,7 @@ fn find_words_ascii_space(chars : Array[Char]) -> Array[Word] {
 
 ///|
 /// Port of `WordSplitter::HyphenSplitter::split_points` (absolute indexes).
-fn hyphen_split_points(chars : Array[Char], word : Word) -> Array[Int] {
+fn hyphen_split_points(chars : Array[Char], word : Word) -> Array[Int32] {
   let splits = []
   for idx in word.start..<word.end {
     if chars[idx] != '-' {
@@ -209,7 +209,7 @@ fn split_words(
 fn break_apart(
   chars : Array[Char],
   word : Word,
-  line_width : Int,
+  line_width : Int32,
   out : Array[Word],
 ) -> Unit {
   let mut offset = word.start
@@ -247,7 +247,7 @@ fn break_apart(
 fn break_long_words(
   chars : Array[Char],
   words : Array[Word],
-  line_width : Int,
+  line_width : Int32,
 ) -> Array[Word] {
   let rv = []
   for word in words {
@@ -264,15 +264,15 @@ fn break_long_words(
 /// Port of `smawk::smawk_inner` (column minima of a totally monotone
 /// matrix).
 fn smawk_inner(
-  matrix : (Int, Int) -> Double,
-  rows : Array[Int],
-  cols : Array[Int],
-  minima : Array[Int],
+  matrix : (Int32, Int32) -> Double,
+  rows : Array[Int32],
+  cols : Array[Int32],
+  minima : Array[Int32],
 ) -> Unit {
   if cols.is_empty() {
     return
   }
-  let stack : Array[Int] = []
+  let stack : Array[Int32] = []
   for r in rows {
     while !stack.is_empty() &&
           matrix(stack[stack.length() - 1], cols[stack.length() - 1]) >
@@ -317,15 +317,15 @@ fn smawk_inner(
 /// Port of `smawk::online_column_minima`.
 fn online_column_minima(
   initial : Double,
-  size : Int,
-  matrix : (Array[(Int, Double)], Int, Int) -> Double,
-) -> Array[(Int, Double)] {
+  size : Int32,
+  matrix : (Array[(Int32, Double)], Int32, Int32) -> Double,
+) -> Array[(Int32, Double)] {
   let result = [(0, initial)]
   // State used by the algorithm.
   let mut finished = 0
   let mut base = 0
   let mut tentative = 0
-  let m = (i : Int, j : Int) => matrix(result, i, j)
+  let m = (i : Int32, j : Int32) => matrix(result, i, j)
   // Keep going until we have finished all size columns.
   while finished < size - 1 {
     // First case: we have already advanced past the previous tentative
@@ -379,7 +379,7 @@ fn online_column_minima(
 fn wrap_optimal_fit(
   fragments : Array[Word],
   line_widths : Array[Double],
-) -> Array[(Int, Int)] {
+) -> Array[(Int32, Int32)] {
   let nline_penalty = 1000.0
   let overflow_penalty = 2500.0
   let short_last_line_fraction = 4.0
@@ -395,7 +395,7 @@ fn wrap_optimal_fit(
   }
   // Port of `LineNumbers`: caches the line number of each break.
   let line_numbers = [0]
-  fn get_line_number(i : Int, minima : Array[(Int, Double)]) -> Int {
+  fn get_line_number(i : Int32, minima : Array[(Int32, Double)]) -> Int32 {
     while line_numbers.length() < i + 1 {
       let pos = line_numbers.length()
       let line_number = 1 + get_line_number(minima[pos].0, minima)
@@ -457,7 +457,7 @@ fn wrap_optimal_fit(
 
 ///|
 /// The UTF-8 length of a string.
-fn utf8_len(chars : Array[Char]) -> Int {
+fn utf8_len(chars : Array[Char]) -> Int32 {
   let mut len = 0
   for c in chars {
     let cp = c.to_int()
@@ -479,7 +479,7 @@ fn utf8_len(chars : Array[Char]) -> Int {
 /// used by the `wordwrap` filter.
 fn textwrap(
   line : String,
-  width~ : Int,
+  width~ : Int32,
   hyphen_splitter~ : Bool,
   break_words~ : Bool,
 ) -> Array[String] {

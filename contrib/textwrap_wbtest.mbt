@@ -3,8 +3,8 @@
 /// splitting, breaking long words, optimal fit).
 fn wrap(
   text : String,
-  width : Int,
-  break_words? : Bool = true,
+  width : Int32,
+  break_words~ : Bool = true,
 ) -> Array[String] {
   textwrap(text, width~, hyphen_splitter=true, break_words~)
 }

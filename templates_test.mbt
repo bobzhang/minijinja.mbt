@@ -3,7 +3,7 @@
 // templates_wbtest.mbt).
 
 ///|
-fn tval(i : Int) -> @minijinja.Value {
+fn tval(i : Int32) -> @minijinja.Value {
   @minijinja.Value::from_int(i)
 }
 

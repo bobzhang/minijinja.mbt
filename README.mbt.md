@@ -105,9 +105,9 @@ test "typed arguments" {
   let env = @minijinja.Environment::new()
   env.add_function("clamp", (state, args) => {
     let a = @minijinja.Args::new(state, args)
-    let value : Int = a.next()
-    let lo : Int = a.next()
-    let hi : Int? = a.next()
+    let value : Int32 = a.next()
+    let lo : Int32 = a.next()
+    let hi : Int32? = a.next()
     a.finish()
     let hi = hi.unwrap_or(100)
     @minijinja.Value::from_int(
@@ -167,8 +167,8 @@ Implement the [`Object`] trait to expose your own types to templates:
 ```mbt check
 ///|
 struct Point {
-  x : Int
-  y : Int
+  x : Int32
+  y : Int32
 }
 
 ///|

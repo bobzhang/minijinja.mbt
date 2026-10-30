@@ -1,19 +1,19 @@
 ///|
-fn[T] replaced(xs : Array[T], i : Int, x : T) -> Array[T] {
+fn[T] replaced(xs : Array[T], i : Int32, x : T) -> Array[T] {
   let rv = xs.copy()
   rv[i] = x
   rv
 }
 
 ///|
-fn[T] removed(xs : Array[T], i : Int) -> Array[T] {
+fn[T] removed(xs : Array[T], i : Int32) -> Array[T] {
   let rv = xs.copy()
   rv.remove(i) |> ignore
   rv
 }
 
 ///|
-fn[T] spliced(xs : Array[T], i : Int, ys : Array[T]) -> Array[T] {
+fn[T] spliced(xs : Array[T], i : Int32, ys : Array[T]) -> Array[T] {
   let rv = xs[:i].to_owned()
   rv.append(ys)
   rv.append(xs[i + 1:].to_owned())

@@ -47,18 +47,13 @@ fn TokenStream::new(
   let tokenizer = Tokenizer::new(
     source, filename, in_expr, syntax_config, ws_config,
   )
-  let current = capture(() => tokenizer.next_token())
-  { tokenizer, current, last_span: Span::default(), }
-}
-
-///|
-/// Runs `f` and captures its result or error.
-fn[T] capture(f : () -> T raise TemplateError) -> Result[T, TemplateError] {
-  try f() catch {
+  // Keep lexer errors as lookahead data until the stream consumes them.
+  let current = try tokenizer.next_token() catch {
     err => Err(err)
   } noraise {
     v => Ok(v)
   }
+  { tokenizer, current, last_span: Span::default(), }
 }
 
 ///|
@@ -120,7 +115,7 @@ priv struct Parser {
   mut in_macro : Bool
   mut in_loop : Bool
   blocks : Set[String]
-  mut depth : Int
+  mut depth : Int32
 }
 
 ///|
@@ -585,7 +580,7 @@ fn Parser::parse_filter_test_name(
   }
   if is_dotted {
     (
-      self.stream.tokenizer.source.view(start_offset~, end_offset~).to_owned(),
+      self.stream.tokenizer.source[start_offset:end_offset].to_owned(),
       self.stream.expand_span(span),
     )
   } else {

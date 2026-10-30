@@ -11,8 +11,8 @@ priv struct MacroObject {
   name : Value
   arg_spec : Array[Value]
   instructions : Instructions
-  offset : Int
-  state_id : Int
+  offset : Int32
+  state_id : Int32
   closure : Closure?
   caller_reference : Bool
 }

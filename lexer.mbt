@@ -32,7 +32,7 @@ priv enum Whitespace {
 }
 
 ///|
-fn Whitespace::from_unit(u : Int) -> Whitespace {
+fn Whitespace::from_unit(u : Int32) -> Whitespace {
   if u == '-'.to_int() {
     Remove
   } else if u == '+'.to_int() {
@@ -43,7 +43,7 @@ fn Whitespace::from_unit(u : Int) -> Whitespace {
 }
 
 ///|
-fn Whitespace::len(self : Whitespace) -> Int {
+fn Whitespace::len(self : Whitespace) -> Int32 {
   match self {
     Default => 0
     Preserve | Remove => 1
@@ -58,8 +58,8 @@ fn is_nl(c : Char) -> Bool {
 ///|
 fn find_start_marker_memchr(
   source : String,
-  offset : Int,
-) -> (Int, StartMarker, Int, Whitespace)? {
+  offset : Int32,
+) -> (Int32, StartMarker, Int32, Whitespace)? {
   let len = source.length()
   let mut i = offset
   while i < len {
@@ -83,9 +83,9 @@ fn find_start_marker_memchr(
 ///|
 fn find_start_marker(
   source : String,
-  offset : Int,
+  offset : Int32,
   syntax_config : SyntaxConfig,
-) -> (Int, StartMarker, Int, Whitespace)? {
+) -> (Int32, StartMarker, Int32, Whitespace)? {
   if syntax_config.is_default {
     return find_start_marker_memchr(source, offset)
   }
@@ -103,7 +103,7 @@ fn find_start_marker(
   }
   let len = source.length()
   for pos in offset..<len {
-    let mut best : (Int, StartMarker, Int, Whitespace)? = None
+    let mut best : (Int32, StartMarker, Int32, Whitespace)? = None
     let mut best_len = -1
     for pattern in patterns {
       let (delim, marker) = pattern
@@ -138,7 +138,7 @@ fn find_start_marker(
 
 ///|
 /// Returns the length (in UTF-16 code units) of the identifier at `offset`.
-fn lex_identifier(s : String, offset : Int) -> Int {
+fn lex_identifier(s : String, offset : Int32) -> Int32 {
   let mut i = offset
   let mut idx = 0
   while char_at(s, i) is Some(c) {
@@ -160,7 +160,7 @@ fn lex_identifier(s : String, offset : Int) -> Int {
 
 ///|
 /// Returns `(was_nl, skip)`.
-fn skip_nl(s : String, offset : Int) -> (Bool, Int) {
+fn skip_nl(s : String, offset : Int32) -> (Bool, Int32) {
   let mut skip = 0
   let mut was_nl = false
   if unit_at(s, offset) == '\n'.to_int() {
@@ -189,7 +189,7 @@ fn lstrip_block(s : StringView) -> StringView {
       break
     }
   }
-  let trimmed = s.view(end_offset=end)
+  let trimmed = s[:end]
   if trimmed.length() == 0 || trimmed[trimmed.length() - 1] == '\n' {
     trimmed
   } else {
@@ -202,7 +202,7 @@ fn should_lstrip_block(
   flag : Bool,
   marker : StartMarker,
   source : String,
-  prefix_end : Int,
+  prefix_end : Int32,
 ) -> Bool {
   if flag && marker != StartMarker::Variable {
     // Only strip if we're at the start of a line
@@ -229,11 +229,11 @@ fn should_lstrip_block(
 ///|
 fn skip_basic_tag(
   source : String,
-  offset : Int,
+  offset : Int32,
   name : String,
   block_end : String,
   skip_ws_control : Bool,
-) -> (Int, Whitespace)? {
+) -> (Int32, Whitespace)? {
   let mut ptr = offset
   if skip_ws_control {
     let u = unit_at(source, ptr)
@@ -273,12 +273,12 @@ priv struct Tokenizer {
   stack : Array[LexerState]
   source : String
   filename : String
-  mut current_line : Int
-  mut current_col : Int
-  mut current_offset : Int
+  mut current_line : Int32
+  mut current_col : Int32
+  mut current_offset : Int32
   mut trim_leading_whitespace : Bool
-  mut pending_start_marker : (StartMarker, Int)?
-  mut paren_balance : Int
+  mut pending_start_marker : (StartMarker, Int32)?
+  mut paren_balance : Int32
   syntax_config : SyntaxConfig
   ws_config : WhitespaceConfig
 }
@@ -295,10 +295,10 @@ fn Tokenizer::new(
   let mut source = input
   if !ws_config.keep_trailing_newline {
     if source.has_suffix("\n") {
-      source = source.view(end_offset=source.length() - 1).to_owned()
+      source = source[:source.length() - 1].to_owned()
     }
     if source.has_suffix("\r") {
-      source = source.view(end_offset=source.length() - 1).to_owned()
+      source = source[:source.length() - 1].to_owned()
     }
   }
   {
@@ -356,12 +356,12 @@ fn Tokenizer::next_token(
 }
 
 ///|
-fn Tokenizer::rest_len(self : Tokenizer) -> Int {
+fn Tokenizer::rest_len(self : Tokenizer) -> Int32 {
   self.source.length() - self.current_offset
 }
 
 ///|
-fn Tokenizer::advance(self : Tokenizer, n : Int) -> StringView {
+fn Tokenizer::advance(self : Tokenizer, n : Int32) -> StringView {
   let start = self.current_offset
   let end = start + n
   let mut i = start
@@ -387,15 +387,15 @@ fn Tokenizer::advance(self : Tokenizer, n : Int) -> StringView {
     i += 1
   }
   self.current_offset = end
-  self.source.view(start_offset=start, end_offset=end)
+  self.source[start:end]
 }
 
 ///|
 fn Tokenizer::span_from(
   self : Tokenizer,
-  start_line : Int,
-  start_col : Int,
-  start_offset : Int,
+  start_line : Int32,
+  start_col : Int32,
+  start_offset : Int32,
 ) -> Span {
   {
     start_line,
@@ -434,14 +434,14 @@ priv enum NumberState {
 }
 
 ///|
-fn is_digit_unit(u : Int) -> Bool {
+fn is_digit_unit(u : Int32) -> Bool {
   u >= '0'.to_int() && u <= '9'.to_int()
 }
 
 ///|
 /// Parses an unsigned integer in the given radix.  Returns `None` on invalid
 /// digits or empty input.
-fn parse_uint_radix(s : StringView, radix : Int) -> BigInt? {
+fn parse_uint_radix(s : StringView, radix : Int32) -> BigInt? {
   if s.length() == 0 {
     return None
   }
@@ -513,9 +513,9 @@ fn Tokenizer::eat_number(self : Tokenizer) -> (Token, Span) raise TemplateError 
       }
       (0x45 | 0x65, Integer | Fraction) => Some(Exponent)
       (0x2B | 0x2D, Exponent) => Some(ExponentSign)
-      (0x30..=0x39, Exponent) => Some(ExponentSign)
-      (0x30..=0x39, s) => Some(s)
-      (0x61..=0x66 | 0x41..=0x46, RadixInteger) if radix == 16 =>
+      (0x30..<=0x39, Exponent) => Some(ExponentSign)
+      (0x30..<=0x39, s) => Some(s)
+      (0x61..<=0x66 | 0x41..<=0x46, RadixInteger) if radix == 16 =>
         Some(RadixInteger)
       (0x5F, s) => {
         has_underscore = true
@@ -591,7 +591,7 @@ fn Tokenizer::eat_identifier(
 ///|
 fn Tokenizer::eat_string(
   self : Tokenizer,
-  delim : Int,
+  delim : Int32,
 ) -> (Token, Span) raise TemplateError {
   let old_line = self.current_line
   let old_col = self.current_col
@@ -618,7 +618,7 @@ fn Tokenizer::eat_string(
     raise self.syntax_error("unexpected end of string")
   }
   let s = self.advance(str_len + 2)
-  let inner = s.view(start_offset=1, end_offset=s.length() - 1)
+  let inner = s[1:s.length() - 1]
   if has_escapes {
     (OwnedStr(unescape(inner)), self.span_from(old_line, old_col, old_off))
   } else {
@@ -685,10 +685,7 @@ fn Tokenizer::tokenize_root(
             self.source,
             offset + start,
           ) => {
-          let peeked = self.source.view(
-            start_offset=offset,
-            end_offset=offset + start,
-          )
+          let peeked = self.source[offset:offset + start]
           let trimmed = lstrip_block(peeked)
           let lead = self.advance(trimmed.length())
           let span = self.span_from(old_line, old_col, old_off)
@@ -700,10 +697,7 @@ fn Tokenizer::tokenize_root(
           (lead, self.span_from(old_line, old_col, old_off))
         }
         Remove => {
-          let peeked = self.source.view(
-            start_offset=offset,
-            end_offset=offset + start,
-          )
+          let peeked = self.source[offset:offset + start]
           let trimmed = trim_end_view(peeked)
           let lead = self.advance(trimmed.length())
           let span = self.span_from(old_line, old_col, old_off)
@@ -728,7 +722,7 @@ fn Tokenizer::tokenize_root(
 fn Tokenizer::handle_start_marker(
   self : Tokenizer,
   marker : StartMarker,
-  skip : Int,
+  skip : Int32,
 ) -> (Token, Span)? raise TemplateError {
   match marker {
     Comment => {
@@ -826,20 +820,17 @@ fn Tokenizer::handle_raw_tag(
       is Some((endraw, ws_next)) {
       let ws = Whitespace::from_unit(unit_at(self.source, offset + ptr))
       let end = ptr - block_start.length()
-      let mut result = self.source.view(
-        start_offset=offset,
-        end_offset=offset + end,
-      )
+      let mut result = self.source[offset:offset + end]
       self.advance(end) |> ignore
       let span = self.span_from(old_line, old_col, old_off)
       self.advance(block_start.length() + endraw) |> ignore
       match ws_start {
         Default if self.ws_config.trim_blocks => {
           if result.length() > 0 && result[0] == '\r' {
-            result = result.view(start_offset=1)
+            result = result[1:]
           }
           if result.length() > 0 && result[0] == '\n' {
-            result = result.view(start_offset=1)
+            result = result[1:]
           }
         }
         Remove => result = trim_start_view(result)

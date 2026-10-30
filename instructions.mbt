@@ -1,18 +1,18 @@
 ///|
 /// This loop has the loop var.
-const LOOP_FLAG_WITH_LOOP_VAR : Int = 1
+const LOOP_FLAG_WITH_LOOP_VAR : Int32 = 1
 
 ///|
 /// This loop is recursive.
-const LOOP_FLAG_RECURSIVE : Int = 2
+const LOOP_FLAG_RECURSIVE : Int32 = 2
 
 ///|
 /// This macro uses the caller var.
-const MACRO_CALLER : Int = 2
+const MACRO_CALLER : Int32 = 2
 
 ///|
 /// The maximum number of filters/tests that can be cached.
-const MAX_LOCALS : Int = 50
+const MAX_LOCALS : Int32 = 50
 
 ///|
 priv enum CaptureMode {
@@ -53,20 +53,20 @@ priv enum Instruction {
   /// Loads a constant value.
   LoadConst(Value)
   /// Builds a map of the last n pairs on the stack.
-  BuildMap(Int)
+  BuildMap(Int32)
   /// Builds a kwargs map of the last n pairs on the stack.
-  BuildKwargs(Int)
+  BuildKwargs(Int32)
   /// Merges N kwargs maps on the list into one.
-  MergeKwargs(Int)
+  MergeKwargs(Int32)
   /// Builds a list of the last n pairs on the stack.
-  BuildList(Int?)
+  BuildList(Int32?)
   /// Builds a tuple of the last n pairs on the stack.
-  BuildTuple(Int?)
+  BuildTuple(Int32?)
   /// Unpacks a list into N stack items.
-  UnpackList(Int)
+  UnpackList(Int32)
   /// Unpacks N lists onto the stack and pushes the number of items there
   /// were unpacked.
-  UnpackLists(Int)
+  UnpackLists(Int32)
   Add
   Sub
   Mul
@@ -88,18 +88,18 @@ priv enum Instruction {
   /// comparisons.
   CompareAndPreserve(CompareOp)
   /// Apply a filter.
-  ApplyFilter(String, Int?, Int)
+  ApplyFilter(String, Int32?, Int32)
   /// Perform a test.
-  PerformTest(String, Int?, Int)
+  PerformTest(String, Int32?, Int32)
   /// Emit the stack top as output
   Emit
   /// Starts a loop.  The argument are loop flags.
-  PushLoop(Int)
+  PushLoop(Int32)
   /// Starts a with block.
   PushWith
   /// Does a single loop iteration.  The argument is the jump target for
   /// when the loop ends and must point to a `PopLoopFrame` instruction.
-  Iterate(Int)
+  Iterate(Int32)
   /// Push a bool that indicates that the loop iterated.
   PushDidNotIterate
   /// Pops the topmost frame
@@ -107,13 +107,13 @@ priv enum Instruction {
   /// Pops the topmost frame and runs loop logic
   PopLoopFrame
   /// Jump to a specific instruction
-  Jump(Int)
+  Jump(Int32)
   /// Jump if the stack top evaluates to false
-  JumpIfFalse(Int)
+  JumpIfFalse(Int32)
   /// Jump if the stack top evaluates to false or pops the value
-  JumpIfFalseOrPop(Int)
+  JumpIfFalseOrPop(Int32)
   /// Jump if the stack top evaluates to true or pops the value
-  JumpIfTrueOrPop(Int)
+  JumpIfTrueOrPop(Int32)
   /// Sets the auto escape flag to the current value.
   PushAutoEscape
   /// Resets the auto escape flag to the previous value.
@@ -123,11 +123,11 @@ priv enum Instruction {
   /// Ends capturing of output.
   EndCapture
   /// Calls a global function
-  CallFunction(String, Int?)
+  CallFunction(String, Int32?)
   /// Calls a method
-  CallMethod(String, Int?)
+  CallMethod(String, Int32?)
   /// Calls an object
-  CallObject(Int?)
+  CallObject(Int32?)
   /// Duplicates the top item
   DupTop
   /// Discards the top item
@@ -147,7 +147,7 @@ priv enum Instruction {
   /// Builds a module
   ExportLocals
   /// Builds a macro on the stack.
-  BuildMacro(String, Int, Int)
+  BuildMacro(String, Int32, Int32)
   /// Breaks from the interpreter loop (exists a function)
   Return
   /// True if the value is undefined
@@ -159,7 +159,7 @@ priv enum Instruction {
 }
 
 ///|
-fn opt_int_debug(v : Int?) -> String {
+fn opt_int_debug(v : Int32?) -> String {
   match v {
     Some(n) => "Some(\{n})"
     None => "None"
@@ -263,8 +263,8 @@ fn Instruction::debug_string(self : Instruction) -> String {
 /// Wrapper around instructions to help with location management.
 priv struct Instructions {
   instructions : Array[Instruction]
-  line_infos : Array[(Int, Int)]
-  span_infos : Array[(Int, Span)]
+  line_infos : Array[(Int32, Int32)]
+  span_infos : Array[(Int32, Span)]
   name : String
   source : String
   mut required_block : Bool
@@ -283,27 +283,27 @@ fn Instructions::new(name : String, source : String) -> Instructions {
 }
 
 ///|
-fn Instructions::get(self : Instructions, idx : Int) -> Instruction? {
+fn Instructions::get(self : Instructions, idx : Int32) -> Instruction? {
   self.instructions.get(idx)
 }
 
 ///|
-fn Instructions::add(self : Instructions, instr : Instruction) -> Int {
+fn Instructions::add(self : Instructions, instr : Instruction) -> Int32 {
   let rv = self.instructions.length()
   self.instructions.push(instr)
   rv
 }
 
 ///|
-fn Instructions::len(self : Instructions) -> Int {
+fn Instructions::len(self : Instructions) -> Int32 {
   self.instructions.length()
 }
 
 ///|
 fn Instructions::add_line_record(
   self : Instructions,
-  instr : Int,
-  line : Int,
+  instr : Int32,
+  line : Int32,
 ) -> Unit {
   let same_loc = match self.line_infos.last() {
     Some((_, last_line)) => last_line == line
@@ -319,8 +319,8 @@ fn Instructions::add_line_record(
 fn Instructions::add_with_line(
   self : Instructions,
   instr : Instruction,
-  line : Int,
-) -> Int {
+  line : Int32,
+) -> Int32 {
   let rv = self.add(instr)
   self.add_line_record(rv, line)
   // if we follow up to a valid span with no more span, clear it out
@@ -336,7 +336,7 @@ fn Instructions::add_with_span(
   self : Instructions,
   instr : Instruction,
   span : Span,
-) -> Int {
+) -> Int32 {
   let rv = self.add(instr)
   let same_loc = match self.span_infos.last() {
     Some((_, last_span)) => last_span == span
@@ -351,7 +351,7 @@ fn Instructions::add_with_span(
 
 ///|
 /// Binary search for the last record whose first instruction is `<= idx`.
-fn[T] lookup_record(records : Array[(Int, T)], idx : Int) -> T? {
+fn[T] lookup_record(records : Array[(Int32, T)], idx : Int32) -> T? {
   let mut lo = 0
   let mut hi = records.length()
   while lo < hi {
@@ -371,13 +371,13 @@ fn[T] lookup_record(records : Array[(Int, T)], idx : Int) -> T? {
 
 ///|
 /// Looks up the line for an instruction
-fn Instructions::get_line(self : Instructions, idx : Int) -> Int? {
+fn Instructions::get_line(self : Instructions, idx : Int32) -> Int32? {
   lookup_record(self.line_infos, idx)
 }
 
 ///|
 /// Looks up a span for an instruction.
-fn Instructions::get_span(self : Instructions, idx : Int) -> Span? {
+fn Instructions::get_span(self : Instructions, idx : Int32) -> Span? {
   match lookup_record(self.span_infos, idx) {
     Some(span) if span != Span::default() => Some(span)
     _ => None
@@ -389,7 +389,7 @@ fn Instructions::get_span(self : Instructions, idx : Int) -> Span? {
 /// from the given pc.
 fn Instructions::get_referenced_names(
   self : Instructions,
-  idx : Int,
+  idx : Int32,
 ) -> Array[String] {
   let rv : Array[String] = []
   if self.instructions.is_empty() {

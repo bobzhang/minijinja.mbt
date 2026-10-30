@@ -35,7 +35,7 @@ pub impl FromValue for Bool with fn from_value(v) {
 }
 
 ///|
-pub impl FromValue for Int with fn from_value(v) {
+pub impl FromValue for Int32 with fn from_value(v) {
   match v {
     Some(v) => value_to_i32(v)
     None => raise missing_argument()
@@ -113,8 +113,8 @@ pub impl[T : FromValue] FromValue for Array[T] with fn from_value(v) {
 ///   let env = @minijinja.Environment::new()
 ///   env.add_function("add", (state, args) => {
 ///     let a = @minijinja.Args::new(state, args)
-///     let x : Int = a.next()
-///     let y : Int? = a.next()
+///     let x : Int32 = a.next()
+///     let y : Int32? = a.next()
 ///     a.finish()
 ///     @minijinja.Value::from_int(x + y.unwrap_or(1))
 ///   })
