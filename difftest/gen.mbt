@@ -2,22 +2,22 @@
 /// Generator state: randomness, a node budget and the names in scope.
 priv struct G {
   rs : @splitmix.RandomState
-  mut budget : Int
+  mut budget : Int32
   mut vars : Array[String]
   macros : Array[String]
-  mut loop_depth : Int
+  mut loop_depth : Int32
   mut in_macro : Bool
-  mut counter : Int
+  mut counter : Int32
   contrib : Bool
 }
 
 ///|
-fn G::pick(self : G, n : Int) -> Int {
+fn G::pick(self : G, n : Int32) -> Int32 {
   self.rs.next_uint(limit=n.reinterpret_as_uint()).reinterpret_as_int()
 }
 
 ///|
-fn G::chance(self : G, pct : Int) -> Bool {
+fn G::chance(self : G, pct : Int32) -> Bool {
   self.pick(100) < pct
 }
 
@@ -28,7 +28,7 @@ fn[T] G::choose(self : G, xs : Array[T]) -> T {
 
 ///|
 /// Picks an index according to the weights.
-fn G::weighted(self : G, weights : Array[Int]) -> Int {
+fn G::weighted(self : G, weights : Array[Int32]) -> Int32 {
   let total = weights.fold(init=0, (a, b) => a + b)
   let mut r = self.pick(total)
   for i, w in weights {
@@ -178,7 +178,7 @@ fn G::gen_atom(self : G) -> Expr {
 }
 
 ///|
-fn G::gen_exprs(self : G, n : Int, depth : Int) -> Array[Expr] {
+fn G::gen_exprs(self : G, n : Int32, depth : Int32) -> Array[Expr] {
   Array::makei(n, _ => self.gen_expr(depth))
 }
 
@@ -193,7 +193,7 @@ fn G::small_arg(self : G) -> Expr {
 
 ///|
 /// `f()` with the given probability, else nothing.
-fn[T] G::maybe(self : G, pct : Int, f : () -> Array[T]) -> Array[T] {
+fn[T] G::maybe(self : G, pct : Int32, f : () -> Array[T]) -> Array[T] {
   if self.chance(pct) {
     f()
   } else {
@@ -215,7 +215,7 @@ fn[T] cat(parts : Array[Array[T]]) -> Array[T] {
 fn G::filter_args(
   self : G,
   name : String,
-  depth : Int,
+  depth : Int32,
 ) -> (Array[Expr], Array[(String, Expr)]) {
   if self.chance(15) {
     return (self.gen_exprs(self.pick(3), depth - 1), [])
@@ -395,7 +395,7 @@ fn G::test_args(self : G, name : String) -> Array[Expr] {
 }
 
 ///|
-fn G::gen_call(self : G, depth : Int) -> Expr {
+fn G::gen_call(self : G, depth : Int32) -> Expr {
   let choices = [30, 10, 10, 5, 0, 0, 6]
   if self.loop_depth > 0 {
     choices[4] = 10
@@ -464,7 +464,7 @@ fn G::gen_call(self : G, depth : Int) -> Expr {
 }
 
 ///|
-fn G::gen_expr(self : G, depth : Int) -> Expr {
+fn G::gen_expr(self : G, depth : Int32) -> Expr {
   self.budget -= 1
   if depth <= 0 || self.budget <= 0 {
     return self.gen_atom()
@@ -603,13 +603,13 @@ fn G::with_scope(
 }
 
 ///|
-fn G::gen_body(self : G, depth : Int) -> Array[Stmt] {
+fn G::gen_body(self : G, depth : Int32) -> Array[Stmt] {
   let n = if self.budget <= 0 { 1 } else { self.pick(4) + 1 }
   Array::makei(n, _ => self.gen_stmt(depth))
 }
 
 ///|
-fn G::gen_stmt(self : G, depth : Int) -> Stmt {
+fn G::gen_stmt(self : G, depth : Int32) -> Stmt {
   self.budget -= 1
   let weights = [18, 32, 8, 10, 8, 3, 3, 3, 2, 4, 2, 2, 1, 0, 2]
   if depth <= 0 || self.budget <= 0 {
@@ -764,7 +764,7 @@ fn G::gen_stmt(self : G, depth : Int) -> Stmt {
 }
 
 ///|
-fn G::gen_json(self : G, depth : Int) -> JVal {
+fn G::gen_json(self : G, depth : Int32) -> JVal {
   match
     self.weighted([
       25,
@@ -873,7 +873,7 @@ fn G::template_ref(self : G, name : String, ext : String) -> Expr {
 fn G::gen_multi(
   self : G,
   ext : String,
-  depth : Int,
+  depth : Int32,
 ) -> (Array[Stmt], Array[(String, Array[Stmt])]) {
   let base = "base" + ext
   let inc = "inc" + ext
@@ -994,7 +994,7 @@ fn G::gen_multi(
 }
 
 ///|
-fn gen_case(size : Int, rs : @splitmix.RandomState) -> Case {
+fn gen_case(size : Int32, rs : @splitmix.RandomState) -> Case {
   let g : G = {
     rs,
     budget: 4 + size / 3,
@@ -1013,7 +1013,7 @@ fn gen_case(size : Int, rs : @splitmix.RandomState) -> Case {
   let name = g.choose([
     "t.txt", "t.txt", "t.html", "t.html", "t.json", "t.yaml", "t.xml",
   ])
-  let ext = name.view(start_offset=1).to_owned()
+  let ext = name[1:].to_owned()
   let (body, extra) = if g.chance(30) {
     g.gen_multi(ext, depth)
   } else {
@@ -1110,7 +1110,7 @@ fn G::contrib_filter_args(
 
 ///|
 /// A pycompat method call or a contrib global.
-fn G::gen_contrib_call(self : G, depth : Int) -> Expr {
+fn G::gen_contrib_call(self : G, depth : Int32) -> Expr {
   let str_arg = () => {
     Expr::Str(self.choose(["a", " ", ",", "", "l", "o", "{}", "-", "ab"]))
   }

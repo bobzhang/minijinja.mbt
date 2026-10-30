@@ -4,13 +4,13 @@
 ///
 /// The value equals `0.d1d2d3... * 10^point`, i.e. `point` digits are in
 /// front of the decimal point.
-fn decompose(x : Double) -> (String, Int) {
+fn decompose(x : Double) -> (String, Int32) {
   let s = x.abs().to_string()
   let (mantissa, exp) = match s.find("e") {
     Some(idx) => {
-      let exp_str = s.view(start_offset=idx + 1)
+      let exp_str = s[idx + 1:]
       let exp = @string.parse_int(exp_str) catch { _ => 0 }
-      (s.view(end_offset=idx), exp)
+      (s[:idx], exp)
     }
     None => (s[:], 0)
   }
@@ -37,12 +37,12 @@ fn decompose(x : Double) -> (String, Int) {
   while trail > lead && d[trail - 1] == '0' {
     trail -= 1
   }
-  let core = d.view(start_offset=lead, end_offset=trail).to_owned()
+  let core = d[lead:trail].to_owned()
   (core, int_len - lead + exp)
 }
 
 ///|
-fn zeros(n : Int) -> String {
+fn zeros(n : Int32) -> String {
   let sb = StringBuilder()
   for _ in 0..<n {
     sb.write_char('0')
@@ -51,16 +51,14 @@ fn zeros(n : Int) -> String {
 }
 
 ///|
-fn layout_plain(digits : String, point : Int) -> String {
+fn layout_plain(digits : String, point : Int32) -> String {
   let len = digits.length()
   if point <= 0 {
     "0." + zeros(-point) + digits
   } else if point >= len {
     digits + zeros(point - len)
   } else {
-    digits.view(end_offset=point).to_owned() +
-    "." +
-    digits.view(start_offset=point).to_owned()
+    digits[:point].to_owned() + "." + digits[point:].to_owned()
   }
 }
 
@@ -109,8 +107,8 @@ pub fn f64_debug(x : Double) -> String {
   let (digits, point) = decompose(x)
   let abs = x.abs()
   if abs < 1.0e-4 || abs >= 1.0e16 {
-    let rest = digits.view(start_offset=1).to_owned()
-    let mantissa = digits.view(end_offset=1).to_owned() +
+    let rest = digits[1:].to_owned()
+    let mantissa = digits[:1].to_owned() +
       (if rest.is_empty() { "" } else { "." + rest })
     sign + mantissa + "e" + (point - 1).to_string()
   } else {

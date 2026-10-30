@@ -2,7 +2,7 @@
 /// Returns the exact decimal expansion of a finite, non-negative double as
 /// `(digits, point)` where the value equals `0.d1d2d3... * 10^point`.
 /// Leading zeros are stripped; `digits` is empty for zero.
-pub fn exact_decimal(x : Double) -> (String, Int) {
+pub fn exact_decimal(x : Double) -> (String, Int32) {
   let bits = x.abs().reinterpret_as_int64()
   let exp = ((bits >> 52) & 0x7FFL).to_int()
   let frac = bits & 0xFFFFFFFFFFFFFL
@@ -32,7 +32,7 @@ pub fn exact_decimal(x : Double) -> (String, Int) {
   while trail > lead && int_digits[trail - 1] == '0' {
     trail -= 1
   }
-  let digits = int_digits.view(start_offset=lead, end_offset=trail).to_owned()
+  let digits = int_digits[lead:trail].to_owned()
   let point = int_digits.length() - lead - frac_len
   (digits, point)
 }
@@ -41,14 +41,18 @@ pub fn exact_decimal(x : Double) -> (String, Int) {
 /// Rounds a digit string (with decimal point position `point`) so that
 /// `keep` digits remain, using round-half-to-even.  Returns the new digits
 /// and point (the digit string may grow by one on carry).
-pub fn round_digits(digits : String, point : Int, keep : Int) -> (String, Int) {
+pub fn round_digits(
+  digits : String,
+  point : Int32,
+  keep : Int32,
+) -> (String, Int32) {
   if keep >= digits.length() {
     return (digits, point)
   }
   if keep < 0 {
     return ("", point)
   }
-  let retained = digits.view(end_offset=keep).iter().to_array()
+  let retained = digits[:keep].iter().to_array()
   let first_dropped = digits[keep]
   let rest_nonzero = {
     let mut nz = false
@@ -94,7 +98,7 @@ pub fn round_digits(digits : String, point : Int, keep : Int) -> (String, Int) {
 ///|
 /// Formats a double with a fixed number of fractional digits like Rust's
 /// `format!("{:.prec$}", x)` (exact, round-half-to-even).
-pub fn format_fixed(x : Double, prec : Int) -> String {
+pub fn format_fixed(x : Double, prec : Int32) -> String {
   if x.is_nan() {
     return "NaN"
   }
@@ -112,7 +116,7 @@ pub fn format_fixed(x : Double, prec : Int) -> String {
   let int_part = if point <= 0 {
     "0"
   } else if digits.length() >= point {
-    digits.view(end_offset=point).to_owned()
+    digits[:point].to_owned()
   } else {
     digits + "0".repeat(point - digits.length())
   }
@@ -137,7 +141,7 @@ pub fn format_fixed(x : Double, prec : Int) -> String {
 /// Formats a double in exponent notation with `prec` fractional digits like
 /// Rust's `format!("{:.prec$e}", x)`.  Returns the mantissa digits (with a
 /// decimal point when `prec > 0`) and the decimal exponent.
-pub fn format_exp_parts(x : Double, prec : Int) -> (String, Int) {
+pub fn format_exp_parts(x : Double, prec : Int32) -> (String, Int32) {
   let (digits, point) = exact_decimal(x)
   if digits.is_empty() {
     let mantissa = if prec > 0 { "0." + "0".repeat(prec) } else { "0" }
@@ -146,11 +150,9 @@ pub fn format_exp_parts(x : Double, prec : Int) -> (String, Int) {
   let (digits, point) = round_digits(digits, point, prec + 1)
   let padded = digits + "0".repeat(prec + 1 - digits.length())
   let mantissa = if prec > 0 {
-    padded.view(end_offset=1).to_owned() +
-    "." +
-    padded.view(start_offset=1, end_offset=prec + 1).to_owned()
+    padded[:1].to_owned() + "." + padded[1:prec + 1].to_owned()
   } else {
-    padded.view(end_offset=1).to_owned()
+    padded[:1].to_owned()
   }
   (mantissa, point - 1)
 }

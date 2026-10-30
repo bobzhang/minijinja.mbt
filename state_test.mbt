@@ -10,7 +10,7 @@
 ///|
 /// Emulates `state.get_or_insert_extension(Counter(default)).0 += 1` and
 /// returns the new counter value.
-fn state_inc_counter(state : @minijinja.State, key : String) -> Int {
+fn state_inc_counter(state : @minijinja.State, key : String) -> Int32 {
   let old = match state.get_temp(key) {
     Some(v) => v.as_i64().unwrap().to_int()
     None => 0
@@ -22,7 +22,7 @@ fn state_inc_counter(state : @minijinja.State, key : String) -> Int {
 
 ///|
 /// Emulates `state.get_extension::<Counter>().map(|c| c.0)`.
-fn state_get_counter(state : @minijinja.State, key : String) -> Int? {
+fn state_get_counter(state : @minijinja.State, key : String) -> Int32? {
   state.get_temp(key).map(v => v.as_i64().unwrap().to_int())
 }
 

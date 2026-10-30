@@ -1,5 +1,5 @@
 ///|
-fn in_ranges(table : FixedArray[Int], cp : Int) -> Bool {
+fn in_ranges(table : FixedArray[Int32], cp : Int32) -> Bool {
   // table is a flat list of inclusive [start, end] pairs sorted by start
   let n = table.length() / 2
   for lo = 0, hi = n; lo < hi; {
@@ -17,7 +17,7 @@ fn in_ranges(table : FixedArray[Int], cp : Int) -> Bool {
 }
 
 ///|
-fn lookup_single(table : FixedArray[Int], cp : Int) -> Int? {
+fn lookup_single(table : FixedArray[Int32], cp : Int32) -> Int32? {
   let n = table.length() / 2
   for lo = 0, hi = n; lo < hi; {
     let mid = lo + (hi - lo) / 2
@@ -35,7 +35,7 @@ fn lookup_single(table : FixedArray[Int], cp : Int) -> Int? {
 }
 
 ///|
-fn lookup_multi(keys : FixedArray[Int], cp : Int) -> Int? {
+fn lookup_multi(keys : FixedArray[Int32], cp : Int32) -> Int32? {
   for lo = 0, hi = keys.length(); lo < hi; {
     let mid = lo + (hi - lo) / 2
     if cp < keys[mid] {
@@ -98,8 +98,8 @@ pub fn is_lowercase(c : Char) -> Bool {
 fn write_mapped(
   sb : StringBuilder,
   c : Char,
-  single : FixedArray[Int],
-  multi_keys : FixedArray[Int],
+  single : FixedArray[Int32],
+  multi_keys : FixedArray[Int32],
   multi_values : FixedArray[String],
 ) -> Unit {
   let cp = c.to_int()

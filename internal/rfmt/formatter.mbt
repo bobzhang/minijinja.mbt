@@ -6,12 +6,12 @@ pub struct Formatter {
   priv buf : StringBuilder
   /// `true` for `{:#?}` style output.
   alternate : Bool
-  priv mut depth : Int
+  priv mut depth : Int32
   priv mut on_newline : Bool
 }
 
 ///|
-pub fn Formatter::new(alternate? : Bool = false) -> Formatter {
+pub fn Formatter::new(alternate~ : Bool = false) -> Formatter {
   { buf: StringBuilder(), alternate, depth: 0, on_newline: false, }
 }
 
@@ -52,7 +52,7 @@ pub fn Formatter::write_str(self : Formatter, s : StringView) -> Unit {
     if self.on_newline {
       self.write_pad()
     }
-    let part = s.view(start_offset=start, end_offset=end)
+    let part = s[start:end]
     self.on_newline = part[part.length() - 1] == '\n'
     self.buf.write_view(part)
     start = end
@@ -127,7 +127,7 @@ pub fn DebugStruct::finish(self : DebugStruct) -> Unit {
 /// Port of `Formatter::debug_tuple`.
 pub struct DebugTuple {
   priv fmt : Formatter
-  priv mut fields : Int
+  priv mut fields : Int32
   priv empty_name : Bool
 }
 

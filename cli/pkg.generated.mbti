@@ -14,7 +14,7 @@ pub let version : String
 
 // Types and methods
 pub(all) struct Outcome {
-  exit_code : Int
+  exit_code : Int32
   stdout : String
   stderr : String
 } derive(Eq, @debug.Debug)

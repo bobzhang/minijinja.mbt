@@ -22,7 +22,7 @@ fn normalize_filter_test_name(name : String) -> String {
 ///|
 fn get_or_lookup_local(
   cache : Array[Value?],
-  idx : Int,
+  idx : Int32,
   f : () -> Value?,
 ) -> Value? {
   if idx < 0 {
@@ -64,7 +64,7 @@ fn vm_eval(
 fn eval_macro(
   state : State,
   instructions : Instructions,
-  pc : Int,
+  pc : Int32,
   out : Output,
   closure : Closure?,
   caller : Value?,
@@ -102,13 +102,13 @@ fn do_eval(
   state : State,
   out : Output,
   stack : Stack,
-  pc : Int,
+  pc : Int32,
 ) -> Value? raise TemplateError {
   let initial_auto_escape = state.auto_escape
   let undefined_behavior = state.undefined_behavior()
   let strict_undefined = undefined_behavior is (Strict | SemiStrict)
   let auto_escape_stack : Array[AutoEscape] = []
-  let mut next_loop_recursion_jump : (Int, Bool)? = None
+  let mut next_loop_recursion_jump : (Int32, Bool)? = None
   let mut loaded_filters : Array[Value?] = Array::make(MAX_LOCALS, None)
   let mut loaded_tests : Array[Value?] = Array::make(MAX_LOCALS, None)
   // If we are extending we are holding the instructions of the target parent
@@ -144,7 +144,7 @@ fn do_eval(
       }
     }
     // the next program counter (`None` means `pc + 1`)
-    let jump : Int? = try {
+    let jump : Int32? = try {
       if state.fuel_tracker is Some(tracker) {
         tracker.track(instr)
       }
@@ -686,12 +686,12 @@ fn do_eval(
 
 ///|
 priv enum CallResult {
-  JumpTo(Int)
+  JumpTo(Int32)
   Push(Value)
 }
 
 ///|
-fn return_jump(target : Int) -> CallResult {
+fn return_jump(target : Int32) -> CallResult {
   JumpTo(target)
 }
 
@@ -699,7 +699,7 @@ fn return_jump(target : Int) -> CallResult {
 fn binop(
   stack : Stack,
   f : (Value, Value) -> Value raise TemplateError,
-) -> Int? raise TemplateError {
+) -> Int32? raise TemplateError {
   let b = stack.pop()
   let a = stack.pop()
   stack.push(f(a, b))
@@ -711,7 +711,7 @@ fn cmp_binop(
   stack : Stack,
   undefined_behavior : UndefinedBehavior,
   f : (Value, Value) -> Bool,
-) -> Int? raise TemplateError {
+) -> Int32? raise TemplateError {
   let b = stack.pop()
   let a = stack.pop()
   undefined_behavior.assert_value_not_undefined(a)
@@ -944,9 +944,9 @@ fn derive_auto_escape(
 fn push_loop(
   state : State,
   iterable : Value,
-  flags : Int,
-  pc : Int,
-  current_recursion_jump : (Int, Bool)?,
+  flags : Int32,
+  pc : Int32,
+  current_recursion_jump : (Int32, Bool)?,
 ) -> Unit raise TemplateError {
   let iter = state.undefined_behavior().try_iter(iterable) catch {
       err =>
@@ -988,7 +988,7 @@ fn push_loop(
 }
 
 ///|
-fn unpack_list(stack : Stack, count : Int) -> Unit raise TemplateError {
+fn unpack_list(stack : Stack, count : Int32) -> Unit raise TemplateError {
   let top = stack.pop()
   let iter = match top {
     Object(obj) =>
@@ -1017,9 +1017,9 @@ fn unpack_list(stack : Stack, count : Int) -> Unit raise TemplateError {
 fn build_macro(
   stack : Stack,
   state : State,
-  offset : Int,
+  offset : Int32,
   name : String,
-  flags : Int,
+  flags : Int32,
 ) -> Unit raise TemplateError {
   let arg_spec = stack.pop().try_iter().to_array()
   let closure = match stack.pop() {
@@ -1041,13 +1041,17 @@ fn build_macro(
 
 ///|
 /// Attaches the location and debug info to `err` and returns it.
-fn processed_err(err : TemplateError, pc : Int, state : State) -> TemplateError {
+fn processed_err(
+  err : TemplateError,
+  pc : Int32,
+  state : State,
+) -> TemplateError {
   process_err(err, pc, state)
   err
 }
 
 ///|
-fn process_err(err : TemplateError, pc : Int, state : State) -> Unit {
+fn process_err(err : TemplateError, pc : Int32, state : State) -> Unit {
   // only attach line information if the error does not have line info yet.
   if err.line() is None {
     match state.instructions.get_span(pc) {

@@ -135,7 +135,7 @@ test "compiler: const folding" {
 ///|
 fn Instructions::fmt_debug(self : Instructions, f : @rfmt.Formatter) -> Unit {
   let l = f.debug_list()
-  let mut last_line : Int? = None
+  let mut last_line : Int32? = None
   for idx, instr in self.instructions {
     let line = self.get_line(idx)
     let idx_str = idx.to_string()

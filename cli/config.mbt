@@ -73,13 +73,13 @@ fn parse_env_bool(s : String, var_name : String) -> Bool raise CliError {
 ///|
 /// Parses an unsigned 64 bit integer like Rust's `u64::from_str`.
 fn parse_u64(s : String) -> UInt64 raise CliError {
-  let digits = if s.has_prefix("+") { s.view(start_offset=1) } else { s[:] }
+  let digits = if s.has_prefix("+") { s[1:] } else { s[:] }
   if digits.length() == 0 {
     raise fail_with("cannot parse integer from empty string")
   }
   let mut rv : UInt64 = 0
   for c in digits {
-    guard c is ('0'..='9') else {
+    guard c is ('0'..<='9') else {
       raise fail_with("invalid digit found in string")
     }
     let d = (c.to_int() - '0'.to_int()).to_uint64()
@@ -212,13 +212,7 @@ async fn Config::update_from_matches(self : Config, matches : Matches) -> Unit {
 ///|
 fn split_once(s : String, sep : String) -> (String, String)? {
   match s.find(sep) {
-    Some(idx) =>
-      Some(
-        (
-          s.view(end_offset=idx).to_owned(),
-          s.view(start_offset=idx + sep.length()).to_owned(),
-        ),
-      )
+    Some(idx) => Some((s[:idx].to_owned(), s[idx + sep.length():].to_owned()))
     None => None
   }
 }
@@ -303,12 +297,12 @@ fn Config::make_syntax(self : Config) -> @minijinja.SyntaxConfig raise CliError 
 /// Picks the auto escape mode for a template name in `auto` mode.
 fn auto_escape_for_name(name : String) -> @minijinja.AutoEscape {
   let name = if name.has_suffix(".j2") {
-    name.view(end_offset=name.length() - 3).to_owned()
+    name[:name.length() - 3].to_owned()
   } else {
     name
   }
   let ext = match name.rev_find(".") {
-    Some(idx) => name.view(start_offset=idx + 1).to_owned()
+    Some(idx) => name[idx + 1:].to_owned()
     None => name
   }
   match ext {

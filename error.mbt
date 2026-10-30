@@ -122,7 +122,7 @@ struct ErrorData {
   kind : ErrorKind
   mut detail : String?
   mut name : String?
-  mut lineno : Int
+  mut lineno : Int32
   mut span : Span?
   mut source : TemplateError?
   mut debug_info : DebugInfo?
@@ -252,7 +252,7 @@ pub fn TemplateError::name(self : TemplateError) -> String? {
 
 ///|
 /// Returns the line number where the error occurred.
-pub fn TemplateError::line(self : TemplateError) -> Int? {
+pub fn TemplateError::line(self : TemplateError) -> Int32? {
   let lineno = self.data().lineno
   if lineno > 0 {
     Some(lineno)
@@ -276,7 +276,7 @@ pub fn TemplateError::span(self : TemplateError) -> Span? {
 ///|
 /// Returns the byte range of where the error occurred if available.  In
 /// MoonBit the offsets are UTF-16 code unit offsets into the source.
-pub fn TemplateError::range(self : TemplateError) -> (Int, Int)? {
+pub fn TemplateError::range(self : TemplateError) -> (Int32, Int32)? {
   match self.data().span {
     Some(span) => Some((span.start_offset, span.end_offset))
     None => None
@@ -287,7 +287,7 @@ pub fn TemplateError::range(self : TemplateError) -> (Int, Int)? {
 fn TemplateError::set_filename_and_line(
   self : TemplateError,
   filename : String,
-  lineno : Int,
+  lineno : Int32,
 ) -> Unit {
   let d = self.data()
   d.name = Some(filename)
@@ -391,7 +391,7 @@ pub impl Show for TemplateError with fn output(self, logger) {
 /// is set).  This does not include the debug info.
 pub fn TemplateError::debug_string(
   self : TemplateError,
-  pretty? : Bool = false,
+  pretty~ : Bool = false,
 ) -> String {
   let f = @rfmt.Formatter::new(alternate=pretty)
   self.fmt_debug(f)
@@ -428,11 +428,11 @@ fn TemplateError::render_debug_info(
   if info.template_source is Some(source) {
     let name = d.name.unwrap_or("")
     let base = match name.rev_find("/") {
-      Some(idx) => name.view(start_offset=idx + 1).to_owned()
+      Some(idx) => name[idx + 1:].to_owned()
       None => name
     }
     let base = match base.rev_find("\\") {
-      Some(idx) => base.view(start_offset=idx + 1).to_owned()
+      Some(idx) => base[idx + 1:].to_owned()
       None => base
     }
     let title = " \{base} "
@@ -503,7 +503,7 @@ fn TemplateError::render_debug_info(
 
 ///|
 /// Port of Rust's `{:^width$}` with a fill character.
-fn center_pad(s : String, width : Int, fill : Char) -> String {
+fn center_pad(s : String, width : Int32, fill : Char) -> String {
   let len = s.char_length()
   if len >= width {
     return s
@@ -524,7 +524,7 @@ fn center_pad(s : String, width : Int, fill : Char) -> String {
 
 ///|
 /// Port of Rust's `{:>width$}`.
-fn right_align(s : String, width : Int) -> String {
+fn right_align(s : String, width : Int32) -> String {
   let len = s.char_length()
   if len >= width {
     return s
@@ -553,7 +553,7 @@ fn rust_lines(s : String) -> Array[String] {
     if line_end > start && s[line_end - 1] == '\r' {
       line_end -= 1
     }
-    rv.push(s.view(start_offset=start, end_offset=line_end).to_owned())
+    rv.push(s[start:line_end].to_owned())
     start = end + 1
   }
   rv

@@ -120,7 +120,7 @@ fn run_binop_instr(
   lhs : Value,
   rhs : Value,
   op : Instruction,
-  file? : String = "<unknown>",
+  file~ : String = "<unknown>",
 ) -> String raise TemplateError {
   let c = CodeGenerator::new(file, "")
   c.add(LoadConst(lhs)) |> ignore
@@ -303,7 +303,7 @@ test "vm: deep recursion" {
     ),
   )
   let rv = tmpl.render(Value::from_pairs([("limit", Value::from_int(limit))]))
-  let pieces : Array[Int] = []
+  let pieces : Array[Int32] = []
   for x in rv.split("|") {
     try @string.parse_int(x) catch {
       _ => ()

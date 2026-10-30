@@ -40,11 +40,11 @@ pub fn SyntaxConfig::default() -> SyntaxConfig {
 /// comment prefixes are disabled unless given.  Raises `InvalidDelimiter` if
 /// the start delimiters are not distinct.
 pub fn SyntaxConfig::new(
-  block_delimiters? : (String, String) = ("{%", "%}"),
-  variable_delimiters? : (String, String) = ("{{", "}}"),
-  comment_delimiters? : (String, String) = ("{#", "#}"),
-  line_statement_prefix? : String = "",
-  line_comment_prefix? : String = "",
+  block_delimiters~ : (String, String) = ("{%", "%}"),
+  variable_delimiters~ : (String, String) = ("{{", "}}"),
+  comment_delimiters~ : (String, String) = ("{#", "#}"),
+  line_statement_prefix~ : String = "",
+  line_comment_prefix~ : String = "",
 ) -> SyntaxConfig raise TemplateError {
   let (block_start, block_end) = block_delimiters
   let (variable_start, variable_end) = variable_delimiters

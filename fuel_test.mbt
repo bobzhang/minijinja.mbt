@@ -8,7 +8,7 @@ test "fuel: basic" {
   assert_eq(env.fuel(), Some(100L))
   env.add_template("test", "{% for x in seq %}{{ x }}\n{% endfor %}")
   let t = env.get_template("test")
-  fn seq(n : Int) -> @minijinja.Value {
+  fn seq(n : Int32) -> @minijinja.Value {
     @minijinja.Value::from_pairs([
       (
         "seq",

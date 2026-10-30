@@ -65,13 +65,9 @@ fn os_error_message(err : @os_error.OSError) -> String {
   let @os_error.OSError(errno, ..) = err
   // `Show` renders as `OSError("<context>: <strerror>")`; keep the strerror
   let s = err.to_string()
-  let s = if s.has_suffix("\")") {
-    s.view(end_offset=s.length() - 2).to_owned()
-  } else {
-    s
-  }
+  let s = if s.has_suffix("\")") { s[:s.length() - 2].to_owned() } else { s }
   let msg = match s.rev_find(": ") {
-    Some(idx) => s.view(start_offset=idx + 2).to_owned()
+    Some(idx) => s[idx + 2:].to_owned()
     None => s
   }
   "\{msg} (os error \{errno})"

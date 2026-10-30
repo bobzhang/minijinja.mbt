@@ -1,5 +1,5 @@
 ///|
-let state_id_counter : Ref[Int] = { val: 0, }
+let state_id_counter : Ref[Int32] = { val: 0, }
 
 ///|
 /// Provides access to the current execution state of the engine.
@@ -14,9 +14,9 @@ pub struct State {
   priv temps : Map[String, Value]
   priv mut blocks : Map[String, BlockStack]
   priv mut loaded_templates : Set[String]
-  priv id : Int
+  priv id : Int32
   priv fuel_tracker : FuelTracker?
-  priv extensions : Map[Int, () -> Unit]
+  priv extensions : Map[Int32, () -> Unit]
 }
 
 ///|
@@ -80,7 +80,7 @@ pub fn State::fuel_levels(self : State) -> (Int64, Int64)? {
 ///|
 priv struct BlockStack {
   instructions : Array[Instructions]
-  mut depth : Int
+  mut depth : Int32
 }
 
 ///|
@@ -210,7 +210,7 @@ fn[T] State::with_execution_state(
   self.auto_escape = auto_escape
   self.current_block = current_block
   let old_loaded = Set::from_iter(self.loaded_templates.iter())
-  let checkpoint : Array[(String, Int, Int)] = []
+  let checkpoint : Array[(String, Int32, Int32)] = []
   let mut old_blocks : Map[String, BlockStack]? = None
   match block_state {
     Keep => ()
@@ -369,7 +369,7 @@ pub fn State::set_temp(self : State, name : String, value : Value) -> Value? {
 ///|
 fn State::make_debug_info(
   self : State,
-  pc : Int,
+  pc : Int32,
   instructions : Instructions,
 ) -> DebugInfo {
   let referenced_locals : Map[String, Value] = Map([])
@@ -404,7 +404,7 @@ fn State::fmt_debug(self : State, f : @rfmt.Formatter) -> Unit {
 }
 
 ///|
-let extension_key_counter : Ref[Int] = { val: 0, }
+let extension_key_counter : Ref[Int32] = { val: 0, }
 
 ///|
 /// A typed key for per-render [`State`] extensions.
@@ -415,7 +415,7 @@ let extension_key_counter : Ref[Int] = { val: 0, }
 ///
 /// ```mbt check
 /// test {
-///   let counter : @minijinja.ExtensionKey[Ref[Int]] = @minijinja.ExtensionKey::new()
+///   let counter : @minijinja.ExtensionKey[Ref[Int32]] = @minijinja.ExtensionKey::new()
 ///   let env = @minijinja.Environment::new()
 ///   env.add_function("count", (state, _args) => {
 ///     let c = state.get_or_insert_extension(counter, () => { val: 0, })
@@ -436,7 +436,7 @@ let extension_key_counter : Ref[Int] = { val: 0, }
 /// }
 /// ```
 pub struct ExtensionKey[T] {
-  priv id : Int
+  priv id : Int32
   priv mut slot : T?
 }
 

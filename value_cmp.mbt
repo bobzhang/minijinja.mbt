@@ -1,7 +1,7 @@
 ///|
 /// Compares two strings by Unicode scalar values (like Rust's `str::cmp`
 /// which compares UTF-8 bytes).
-fn compare_str(a : String, b : String) -> Int {
+fn compare_str(a : String, b : String) -> Int32 {
   let la = a.length()
   let lb = b.length()
   let n = if la < lb { la } else { lb }
@@ -32,7 +32,7 @@ fn compare_str(a : String, b : String) -> Int {
 }
 
 ///|
-fn compare_int64(a : Int64, b : Int64) -> Int {
+fn compare_int64(a : Int64, b : Int64) -> Int32 {
   if a < b {
     -1
   } else if a > b {
@@ -43,7 +43,7 @@ fn compare_int64(a : Int64, b : Int64) -> Int {
 }
 
 ///|
-fn compare_big(a : BigInt, b : BigInt) -> Int {
+fn compare_big(a : BigInt, b : BigInt) -> Int32 {
   if a < b {
     -1
   } else if a > b {
@@ -54,7 +54,7 @@ fn compare_big(a : BigInt, b : BigInt) -> Int {
 }
 
 ///|
-fn f64_total_cmp(left : Double, right : Double) -> Int {
+fn f64_total_cmp(left : Double, right : Double) -> Int32 {
   let mut l = left.reinterpret_as_int64()
   let mut r = right.reinterpret_as_int64()
   l = l ^ ((l >> 63).reinterpret_as_uint64() >> 1).reinterpret_as_int64()
@@ -63,7 +63,7 @@ fn f64_total_cmp(left : Double, right : Double) -> Int {
 }
 
 ///|
-fn cmp_f64(left : Double, right : Double) -> Int {
+fn cmp_f64(left : Double, right : Double) -> Int32 {
   if left == right {
     0
   } else {
@@ -72,7 +72,7 @@ fn cmp_f64(left : Double, right : Double) -> Int {
 }
 
 ///|
-fn cmp_f64_big(left : Double, right : BigInt, upper : BigInt?) -> Int {
+fn cmp_f64_big(left : Double, right : BigInt, upper : BigInt?) -> Int32 {
   match cmp_f64(left, bigint_to_f64(right)) {
     0 if !left.is_nan() && !left.is_inf() => {
       let trunc = f64_trunc_to_bigint(left)
@@ -102,7 +102,7 @@ fn cmp_f64_big(left : Double, right : BigInt, upper : BigInt?) -> Int {
 ///|
 /// Compares numbers that `coerce` could not bring into a common lossless
 /// representation.
-fn cmp_uncoercible_numbers(left : Value, right : Value) -> Int {
+fn cmp_uncoercible_numbers(left : Value, right : Value) -> Int32 {
   fn num(v : Value) -> (Double?, BigInt?) {
     match v {
       F64(x) => (Some(x), None)
@@ -217,7 +217,7 @@ fn objects_equal(av : Value, a : DynObject, bv : Value, b : DynObject) -> Bool {
 
 ///|
 /// Consults the `custom_cmp` hook of custom objects.
-fn custom_object_cmp(a : DynObject, other : Value) -> Int? {
+fn custom_object_cmp(a : DynObject, other : Value) -> Int32? {
   match a.inner {
     Custom(o) =>
       match o.custom_cmp(other) {
@@ -239,7 +239,7 @@ fn has_default_render(a : DynObject) -> Bool {
 
 ///|
 /// Compares two values like MiniJinja's `Ord` implementation.
-pub fn Value::cmp(self : Value, other : Value) -> Int {
+pub fn Value::cmp(self : Value, other : Value) -> Int32 {
   if small_int(self) is Some(a) && small_int(other) is Some(b) {
     return compare_int64(a, b)
   }

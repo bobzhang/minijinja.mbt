@@ -190,7 +190,7 @@ pub fn Value::as_i64(self : Value) -> Int64? {
 
 ///|
 /// Returns the value as a non-negative `Int` index if possible.
-pub fn Value::as_usize(self : Value) -> Int? {
+pub fn Value::as_usize(self : Value) -> Int32? {
   match self.as_i64() {
     Some(v) if v >= 0L && v <= 0x7FFFFFFFL => Some(v.to_int())
     _ => None
@@ -806,8 +806,8 @@ fn value_contains(
 fn get_offset_and_len(
   start : Int64?,
   stop : Int64?,
-  end : () -> Int,
-) -> (Int, Int) {
+  end : () -> Int32,
+) -> (Int32, Int32) {
   let start_v = start.unwrap_or(0L)
   let stop_neg = match stop {
     None => true
@@ -847,7 +847,7 @@ fn get_offset_and_len(
 }
 
 ///|
-fn clamp_int(v : Int64) -> Int {
+fn clamp_int(v : Int64) -> Int32 {
   if v > 0x7FFFFFFFL {
     0x7FFFFFFF
   } else if v < -0x80000000L {
@@ -870,8 +870,8 @@ fn range_step_backwards(
   start : Int64?,
   stop : Int64?,
   step : Int64,
-  end : Int,
-) -> Array[Int] {
+  end : Int32,
+) -> Array[Int32] {
   // Note: like upstream this yields index 0 for empty sequences; the
   // callers skip out of range indices where upstream panics (`[][::-1]`).
   let end64 = end.to_int64()
@@ -1120,7 +1120,7 @@ fn unsupported_conversion(kind : ValueKind, target : String) -> TemplateError {
 
 ///|
 /// Number of bytes the string takes up as UTF-8.
-fn utf8_len(s : String) -> Int {
+fn utf8_len(s : String) -> Int32 {
   let mut n = 0
   for c in s {
     let cp = c.to_int()

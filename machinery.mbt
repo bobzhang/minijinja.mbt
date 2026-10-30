@@ -11,8 +11,8 @@
 /// tools such as the CLI's `--dump=tokens`.
 pub fn debug_tokens(
   source : String,
-  trim_blocks? : Bool = false,
-  lstrip_blocks? : Bool = false,
+  trim_blocks~ : Bool = false,
+  lstrip_blocks~ : Bool = false,
 ) -> Array[String] raise TemplateError {
   let ws = { keep_trailing_newline: false, lstrip_blocks, trim_blocks, }
   tokenize(source, false, SyntaxConfig::default(), ws).map(item => {

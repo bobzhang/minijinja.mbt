@@ -23,7 +23,7 @@ fn path_parent(path : String) -> String {
   let trimmed = trim_trailing_slashes(path)
   match trimmed.rev_find("/") {
     Some(0) => "/"
-    Some(idx) => trimmed.view(end_offset=idx).to_owned()
+    Some(idx) => trimmed[:idx].to_owned()
     None => ""
   }
 }
@@ -34,7 +34,7 @@ fn trim_trailing_slashes(path : String) -> String {
   while end > 1 && path[end - 1] == '/' {
     end -= 1
   }
-  path.view(end_offset=end).to_owned()
+  path[:end].to_owned()
 }
 
 ///|
@@ -42,7 +42,7 @@ fn trim_trailing_slashes(path : String) -> String {
 fn path_file_name(path : String) -> String {
   let trimmed = trim_trailing_slashes(path)
   match trimmed.rev_find("/") {
-    Some(idx) => trimmed.view(start_offset=idx + 1).to_owned()
+    Some(idx) => trimmed[idx + 1:].to_owned()
     None => trimmed
   }
 }
@@ -53,7 +53,7 @@ fn path_file_name(path : String) -> String {
 fn path_extension(path : String) -> String? {
   let name = path_file_name(path)
   match name.rev_find(".") {
-    Some(idx) if idx > 0 => Some(name.view(start_offset=idx + 1).to_owned())
+    Some(idx) if idx > 0 => Some(name[idx + 1:].to_owned())
     _ => None
   }
 }

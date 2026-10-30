@@ -69,10 +69,7 @@ fn stringify_tokens(tokens : Array[(Token, Span)], contents : String) -> String 
     } else {
       span.end_offset
     }
-    let token_source = contents.view(
-      start_offset=span.start_offset,
-      end_offset=end,
-    )
+    let token_source = contents[span.start_offset:end]
     sb.write_string(token.debug_string())
     sb.write_char('\n')
     sb.write_string("  ")

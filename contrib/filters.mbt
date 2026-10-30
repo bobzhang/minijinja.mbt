@@ -23,7 +23,7 @@ fn value_to_i64(v : @minijinja.Value) -> Int64? {
 
 ///|
 /// Port of `usize::try_from(Value)` (bounded to `Int`).
-fn value_to_usize(v : @minijinja.Value) -> Int? {
+fn value_to_usize(v : @minijinja.Value) -> Int32? {
   match value_to_i64(v) {
     Some(i) if i >= 0L && i <= 0x7FFFFFFFL => Some(i.to_int())
     _ => None
@@ -124,7 +124,7 @@ pub fn random(
 ///   inspect(@contrib.filesizeformat(1024.0, binary=true), content="1.0 KiB")
 /// }
 /// ```
-pub fn filesizeformat(value : Double, binary? : Bool = false) -> String {
+pub fn filesizeformat(value : Double, binary~ : Bool = false) -> String {
   let bin_prefixes = ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
   let si_prefixes = ["kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
   let (prefixes, base) = if binary {
@@ -498,7 +498,7 @@ fn resolve_numeric_entity(entity : String) -> Char? {
 ///|
 /// Port of `u32::from_str_radix` (an optional `+` sign followed by at least
 /// one digit; overflow fails).
-fn parse_u32(s : StringView, radix : Int) -> Int64? {
+fn parse_u32(s : StringView, radix : Int32) -> Int64? {
   let digits = if s is ['+', .. rest] { rest } else { s }
   if digits.is_empty() {
     return None
@@ -506,9 +506,9 @@ fn parse_u32(s : StringView, radix : Int) -> Int64? {
   let mut rv = 0L
   for c in digits {
     let d = match c {
-      '0'..='9' => c.to_int() - '0'.to_int()
-      'a'..='z' => c.to_int() - 'a'.to_int() + 10
-      'A'..='Z' => c.to_int() - 'A'.to_int() + 10
+      '0'..<='9' => c.to_int() - '0'.to_int()
+      'a'..<='z' => c.to_int() - 'a'.to_int() + 10
+      'A'..<='Z' => c.to_int() - 'A'.to_int() + 10
       _ => return None
     }
     if d >= radix {

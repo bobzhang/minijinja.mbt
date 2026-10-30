@@ -46,12 +46,12 @@ fn AdjacentLoopItemIter::peek_next_item(self : AdjacentLoopItemIter) -> Value {
 ///|
 /// The object behind the `loop` variable.
 priv struct LoopObject {
-  len : Int?
+  len : Int32?
   /// The current index, `-1` before the first iteration.
-  mut idx : Int
-  depth : Int
+  mut idx : Int32
+  depth : Int32
   mut last_changed_value : Array[Value]?
-  recurse_jump_target : Int?
+  recurse_jump_target : Int32?
   iter : AdjacentLoopItemIter
 }
 
@@ -155,7 +155,7 @@ priv struct LoopState {
   /// If we're popping the frame, do we want to jump somewhere?  The first
   /// item is the target jump instruction, the second tells us if we need to
   /// end capturing.
-  mut current_recursion_jump : (Int, Bool)?
+  mut current_recursion_jump : (Int32, Bool)?
   object : LoopObject
   value : Value
 }
@@ -163,10 +163,10 @@ priv struct LoopState {
 ///|
 fn LoopState::new(
   iter : Iter[Value],
-  depth : Int,
+  depth : Int32,
   with_loop_var : Bool,
-  recurse_jump_target : Int?,
-  current_recursion_jump : (Int, Bool)?,
+  recurse_jump_target : Int32?,
+  current_recursion_jump : (Int32, Bool)?,
 ) -> LoopState {
   let object = {
     len: iter.size_hint(),

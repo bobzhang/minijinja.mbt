@@ -1,13 +1,13 @@
 ///|
 #borrow(path)
-extern "C" fn oracle_start_ffi(path : Bytes) -> Int = "difftest_oracle_start"
+extern "C" fn oracle_start_ffi(path : Bytes) -> Int32 = "difftest_oracle_start"
 
 ///|
 #borrow(req)
-extern "C" fn oracle_query_ffi(req : Bytes, timeout_ms : Int) -> Bytes = "difftest_oracle_query"
+extern "C" fn oracle_query_ffi(req : Bytes, timeout_ms : Int32) -> Bytes = "difftest_oracle_query"
 
 ///|
-extern "C" fn alarm_ffi(seconds : Int) -> Unit = "difftest_alarm"
+extern "C" fn alarm_ffi(seconds : Int32) -> Unit = "difftest_alarm"
 
 ///|
 #borrow(path, data)
@@ -85,19 +85,17 @@ fn render_ours_inner(c : Case) -> Outcome {
 ///|
 fn Case::request(self : Case) -> String {
   let j : Json = {
-    "name": self.name.to_json(),
-    "source": self.source().to_json(),
+    "name": Json(self.name),
+    "source": Json(self.source()),
     "templates": Json::array(
-      self.extra.map(t => {
-        Json::array([t.0.to_json(), body_source(t.1).to_json()])
-      }),
+      self.extra.map(t => Json::array([Json(t.0), Json(body_source(t.1))])),
     ),
-    "ctx": self.ctx_json().to_json(),
-    "undefined": self.undefined.to_json(),
-    "trim_blocks": self.trim_blocks.to_json(),
-    "lstrip_blocks": self.lstrip_blocks.to_json(),
-    "keep_trailing_newline": self.keep_trailing_newline.to_json(),
-    "contrib": self.contrib.to_json(),
+    "ctx": Json(self.ctx_json()),
+    "undefined": Json(self.undefined),
+    "trim_blocks": Json(self.trim_blocks),
+    "lstrip_blocks": Json(self.lstrip_blocks),
+    "keep_trailing_newline": Json(self.keep_trailing_newline),
+    "contrib": Json(self.contrib),
   }
   j.stringify()
 }
@@ -195,12 +193,12 @@ fn report_mismatch(c : Case) -> String {
 
 ///|
 /// Greedy shrinking: keep taking the first smaller case that still fails.
-fn shrink_failure(c : Case, max_steps : Int) -> Case {
+fn shrink_failure(c : Case, max_steps : Int32) -> Case {
   shrink_while(c, max_steps, x => compare(x) is Some(_))
 }
 
 ///|
-fn shrink_while(c : Case, max_steps : Int, fails : (Case) -> Bool) -> Case {
+fn shrink_while(c : Case, max_steps : Int32, fails : (Case) -> Bool) -> Case {
   let mut current = c
   for _ in 0..<max_steps {
     let next = @quickcheck.Shrink::shrink(current).find_first(fails)
@@ -227,18 +225,18 @@ fn mismatch_key(ours : Outcome, theirs : Outcome) -> String {
 
 ///|
 fn survey(
-  count : Int,
+  count : Int32,
   seed : UInt64,
-  max_size : Int,
-  max_reports : Int,
+  max_size : Int32,
+  max_reports : Int32,
 ) -> Unit {
-  let rs = @splitmix.new(seed~)
-  let seen : Map[String, Int] = Map([])
+  let rs = @splitmix.RandomState(seed~)
+  let seen : Map[String, Int32] = Map([])
   let mut mismatches = 0
   let mut crashes = 0
   let mut rendered = 0
   let mut multi = 0
-  let errors : Map[String, Int] = Map([])
+  let errors : Map[String, Int32] = Map([])
   let mut reported = 0
   for i in 0..<count {
     let size = i % max_size
@@ -298,7 +296,7 @@ fn survey(
 }
 
 ///|
-fn run_check(count : Int, seed : UInt64, max_size : Int) -> Unit {
+fn run_check(count : Int32, seed : UInt64, max_size : Int32) -> Unit {
   try
     @quickcheck.check(
       (c : Case) => compare(c) is None,
@@ -349,7 +347,7 @@ fn dump_unicode() -> Unit {
     sb.write_char('\n')
   }
   let out = sb.to_string()
-  println(out.view(end_offset=out.length() - 1))
+  println(out[:out.length() - 1])
 }
 
 ///|
@@ -359,7 +357,7 @@ fn main {
     dump_unicode()
     return
   }
-  let arg = (i : Int, default : String) => args.get(i).unwrap_or(default)
+  let arg = (i : Int32, default : String) => args.get(i).unwrap_or(default)
   let mode = arg(1, "survey")
   let count = @string.parse_int(arg(2, "1000")) catch { _ => 1000 }
   let seed = @string.parse_int64(arg(3, "1")).reinterpret_as_uint64() catch {
@@ -378,7 +376,7 @@ fn main {
     "check" => run_check(count, seed, max_size)
     "syntax" => {
       // shortest generated example per syntax error message (ours only)
-      let rs = @splitmix.new(seed~)
+      let rs = @splitmix.RandomState(seed~)
       let examples : Map[String, String] = Map([])
       for i in 0..<count {
         let c = gen_case(i % max_size, rs)
@@ -400,7 +398,7 @@ fn main {
       }
     }
     "show" => {
-      let rs = @splitmix.new(seed~)
+      let rs = @splitmix.RandomState(seed~)
       for i in 0..<count {
         println("--- case \{i}\n\{gen_case(i % max_size, rs).source()}")
       }

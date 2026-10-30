@@ -14,7 +14,7 @@ pub fn filesizeformat(Double, binary? : Bool) -> String
 
 pub fn joiner(sep? : @minijinja.Value) -> @minijinja.Value
 
-pub fn lipsum(@minijinja.State, n? : Int, @minijinja.Kwargs) -> @minijinja.Value raise @minijinja.TemplateError
+pub fn lipsum(@minijinja.State, n? : Int32, @minijinja.Kwargs) -> @minijinja.Value raise @minijinja.TemplateError
 
 pub fn pluralize(@minijinja.Value, singular? : @minijinja.Value, plural? : @minijinja.Value) -> @minijinja.Value raise @minijinja.TemplateError
 

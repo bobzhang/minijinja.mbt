@@ -60,7 +60,7 @@ fn XorShiftRng::next(self : XorShiftRng) -> UInt64 {
 
 ///|
 /// A random index in `0..max` (port of `next_usize`).
-fn XorShiftRng::next_usize(self : XorShiftRng, max : Int) -> Int {
+fn XorShiftRng::next_usize(self : XorShiftRng, max : Int32) -> Int32 {
   let v = (self.random() * max.to_double()).to_int64()
   if v < 0L {
     0

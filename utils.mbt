@@ -135,13 +135,13 @@ fn write_html_escaped(sb : StringBuilder, s : String) -> Unit {
       _ => continue
     }
     if start < i {
-      sb.write_view(s.view(start_offset=start, end_offset=i))
+      sb.write_view(s[start:i])
     }
     sb.write_string(rep)
     start = i + 1
   }
   if start < s.length() {
-    sb.write_view(s.view(start_offset=start))
+    sb.write_view(s[start:])
   }
 }
 

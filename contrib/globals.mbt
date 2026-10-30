@@ -2,7 +2,7 @@
 /// The object returned by [`cycler`].
 priv struct Cycler {
   items : Array[@minijinja.Value]
-  mut pos : Int
+  mut pos : Int32
 }
 
 ///|
@@ -180,7 +180,7 @@ let lipsum_words : FixedArray[String] = [
 /// * `html`: set to `true` to generate HTML paragraphs instead.
 pub fn lipsum(
   state : @minijinja.State,
-  n? : Int,
+  n? : Int32,
   kwargs : @minijinja.Kwargs,
 ) -> @minijinja.Value raise @minijinja.TemplateError {
   let n_kwargs = kwargs.get_usize("n")

@@ -34,7 +34,7 @@ fn undef_render_x(
 fn undef_err_kind(
   env : @minijinja.Environment,
   source : String,
-  ctx? : @minijinja.Value = undef_empty_map(),
+  ctx~ : @minijinja.Value = undef_empty_map(),
 ) -> @minijinja.ErrorKind raise {
   try env.render_str(source, ctx) catch {
     e => e.kind()

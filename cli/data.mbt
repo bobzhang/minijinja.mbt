@@ -68,14 +68,14 @@ fn select_data(
 
 ///|
 /// Parses a `usize` like Rust's `str::parse::<usize>`.
-fn parse_index(s : String) -> Int? {
-  let digits = if s.has_prefix("+") { s.view(start_offset=1) } else { s[:] }
+fn parse_index(s : String) -> Int32? {
+  let digits = if s.has_prefix("+") { s[1:] } else { s[:] }
   if digits.length() == 0 || digits.length() > 9 {
     return None
   }
   let mut rv = 0
   for c in digits {
-    guard c is ('0'..='9') else { return None }
+    guard c is ('0'..<='9') else { return None }
     rv = rv * 10 + (c.to_int() - '0'.to_int())
   }
   Some(rv)

@@ -33,7 +33,7 @@ fn contrib_env() -> @minijinja.Environment {
 /// Renders a template string with all contrib filters and functions.
 fn render(
   source : String,
-  ctx? : Array[(String, @minijinja.Value)] = [],
+  ctx~ : Array[(String, @minijinja.Value)] = [],
 ) -> String raise {
   contrib_env().render_str(source, @minijinja.Value::from_pairs(ctx))
 }
@@ -42,7 +42,7 @@ fn render(
 /// Renders a template string and returns the error message.
 fn render_err(
   source : String,
-  ctx? : Array[(String, @minijinja.Value)] = [],
+  ctx~ : Array[(String, @minijinja.Value)] = [],
 ) -> String raise {
   try
     contrib_env().render_str(source, @minijinja.Value::from_pairs(ctx))

@@ -2,7 +2,7 @@
 /// Divergences from upstream found by differential testing (`difftest/`).
 fn dt_render(
   source : String,
-  name? : String = "t.txt",
+  name~ : String = "t.txt",
 ) -> String raise @minijinja.TemplateError {
   let env = @minijinja.Environment::new()
   env.add_template(name, source)

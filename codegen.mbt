@@ -1,7 +1,7 @@
 ///|
 /// For the first `MAX_LOCALS` filters/tests, an ID is returned for faster
 /// lookups from the stack.
-fn get_local_id(ids : Map[String, Int], name : String) -> Int {
+fn get_local_id(ids : Map[String, Int32], name : String) -> Int32 {
   match ids.get(name) {
     Some(id) => id
     None =>
@@ -33,9 +33,9 @@ fn compare_op(op : CompareOpKind) -> CompareOp {
 /// Represents an open block of code that does not yet have updated jump
 /// targets.
 priv enum PendingBlock {
-  Branch(Int)
-  Loop(Int, Array[Int])
-  ScBool(Array[Int])
+  Branch(Int32)
+  Loop(Int32, Array[Int32])
+  ScBool(Array[Int32])
 }
 
 ///|
@@ -44,11 +44,11 @@ priv struct CodeGenerator {
   instructions : Instructions
   blocks : Map[String, Instructions]
   pending_block : Array[PendingBlock]
-  mut current_line : Int
+  mut current_line : Int32
   span_stack : Array[Span]
-  filter_local_ids : Map[String, Int]
-  test_local_ids : Map[String, Int]
-  mut raw_template_bytes : Int
+  filter_local_ids : Map[String, Int32]
+  test_local_ids : Map[String, Int32]
+  mut raw_template_bytes : Int32
 }
 
 ///|
@@ -66,7 +66,7 @@ fn CodeGenerator::new(file : String, source : String) -> CodeGenerator {
 }
 
 ///|
-fn CodeGenerator::set_line(self : CodeGenerator, lineno : Int) -> Unit {
+fn CodeGenerator::set_line(self : CodeGenerator, lineno : Int32) -> Unit {
   self.current_line = lineno
 }
 
@@ -88,7 +88,7 @@ fn CodeGenerator::pop_span(self : CodeGenerator) -> Unit {
 
 ///|
 /// Add a simple instruction with the current location.
-fn CodeGenerator::add(self : CodeGenerator, instr : Instruction) -> Int {
+fn CodeGenerator::add(self : CodeGenerator, instr : Instruction) -> Int32 {
   if self.span_stack.last() is Some(span) &&
     span.start_line == self.current_line {
     return self.instructions.add_with_span(instr, span)
@@ -102,17 +102,21 @@ fn CodeGenerator::add_with_span(
   self : CodeGenerator,
   instr : Instruction,
   span : Span,
-) -> Int {
+) -> Int32 {
   self.instructions.add_with_span(instr, span)
 }
 
 ///|
-fn CodeGenerator::next_instruction(self : CodeGenerator) -> Int {
+fn CodeGenerator::next_instruction(self : CodeGenerator) -> Int32 {
   self.instructions.len()
 }
 
 ///|
-fn CodeGenerator::patch(self : CodeGenerator, idx : Int, target : Int) -> Unit {
+fn CodeGenerator::patch(
+  self : CodeGenerator,
+  idx : Int32,
+  target : Int32,
+) -> Unit {
   let instr = self.instructions.instructions[idx]
   self.instructions.instructions[idx] = match instr {
     Iterate(_) => Iterate(target)
@@ -247,7 +251,7 @@ fn CodeGenerator::end_sc_bool(self : CodeGenerator) -> Unit {
 ///|
 fn CodeGenerator::end_condition(
   self : CodeGenerator,
-  new_jump_instr : Int,
+  new_jump_instr : Int32,
 ) -> Unit {
   match self.pending_block.pop() {
     Some(Branch(jump_instr)) => self.patch(jump_instr, new_jump_instr)
@@ -759,9 +763,9 @@ fn CodeGenerator::compile_call(
 fn CodeGenerator::compile_call_args(
   self : CodeGenerator,
   args : Array[CallArg],
-  extra_args : Int,
+  extra_args : Int32,
   caller : MacroNode?,
-) -> Int? {
+) -> Int32? {
   let mut pending_args = extra_args
   let mut num_args_batches = 0
   let mut has_kwargs = caller is Some(_)
@@ -946,7 +950,7 @@ fn CodeGenerator::compile_bin_op(self : CodeGenerator, c : BinOpNode) -> Unit {
 
 ///|
 /// Returns the size hint for buffers.
-fn CodeGenerator::buffer_size_hint(self : CodeGenerator) -> Int {
+fn CodeGenerator::buffer_size_hint(self : CodeGenerator) -> Int32 {
   self.raw_template_bytes * 2
 }
 

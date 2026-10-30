@@ -32,13 +32,13 @@ pub(all) enum Enumerator {
   /// A dynamic iterator over key/value pairs (for maps).
   KeyValueIter(Iter[(Value, Value)])
   /// Indicates sequential iteration from `0` to `n - 1` through `get_value`.
-  Seq(Int)
+  Seq(Int32)
   /// A vector of known values to iterate over.
   Values(Array[Value])
 }
 
 ///|
-fn Enumerator::query_len(self : Enumerator) -> Int? {
+fn Enumerator::query_len(self : Enumerator) -> Int32? {
   match self {
     Empty => Some(0)
     Values(v) => Some(v.length())
@@ -71,12 +71,12 @@ pub(open) trait Object {
   fn get_value(Self, Value) -> Value? = _
   fn get_value_by_str(Self, String) -> Value? = _
   fn enumerate(Self) -> Enumerator = _
-  fn enumerator_len(Self) -> Int? = _
+  fn enumerator_len(Self) -> Int32? = _
   fn is_true(Self) -> Bool = _
   fn call(Self, State, Array[Value]) -> Value raise TemplateError = _
   fn call_method(Self, State, String, Array[Value]) -> Value raise TemplateError = _
   fn render(Self) -> String? = _
-  fn custom_cmp(Self, Value) -> Int? = _
+  fn custom_cmp(Self, Value) -> Int32? = _
 }
 
 ///|
@@ -135,9 +135,9 @@ impl Object with fn render(_self) {
 ///|
 priv struct MergeSeqObject {
   values : Array[Value]
-  total_len : Int?
+  total_len : Int32?
   repr : ObjectRepr
-  depth : Int
+  depth : Int32
 }
 
 ///|
@@ -162,12 +162,12 @@ priv enum ObjectImpl {
 /// A type erased object.  Values hold objects through this handle which
 /// carries a stable identity.
 pub struct DynObject {
-  priv id : Int
+  priv id : Int32
   priv inner : ObjectImpl
 }
 
 ///|
-let object_id_counter : Ref[Int] = { val: 0, }
+let object_id_counter : Ref[Int32] = { val: 0, }
 
 ///|
 fn DynObject::new(inner : ObjectImpl) -> DynObject {
@@ -277,7 +277,7 @@ pub fn DynObject::enumerate(self : DynObject) -> Enumerator {
 
 ///|
 /// Returns the length of the enumerator if known.
-pub fn DynObject::enumerator_len(self : DynObject) -> Int? {
+pub fn DynObject::enumerator_len(self : DynObject) -> Int32? {
   match self.inner {
     Seq(items) | Tuple(items) => Some(items.length())
     Map(m) | Kwargs(m) => Some(m.length())
@@ -533,7 +533,7 @@ fn merge_seq_enumerate(m : MergeSeqObject) -> Enumerator {
 let merge_seq_max_depth = 32
 
 ///|
-fn merge_seq_depth_for_values(values : Array[Value]) -> Int {
+fn merge_seq_depth_for_values(values : Array[Value]) -> Int32 {
   let mut max = 0
   for value in values {
     if value is Object({ inner: MergeSeq(m), .. }) && m.depth > max {
@@ -564,7 +564,7 @@ fn make_merge_seq(values : Array[Value], repr : ObjectRepr) -> Value {
     values = flattened
     depth = merge_seq_depth_for_values(values)
   }
-  let mut total_len : Int? = Some(0)
+  let mut total_len : Int32? = Some(0)
   for v in values {
     match (total_len, v.len()) {
       (Some(a), Some(b)) => total_len = Some(a + b)

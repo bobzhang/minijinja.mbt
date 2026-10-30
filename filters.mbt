@@ -2,7 +2,7 @@
 /// Stable merge sort with a comparator that may raise.
 fn[T] stable_sort(
   items : Array[T],
-  cmp : (T, T) -> Int raise TemplateError,
+  cmp : (T, T) -> Int32 raise TemplateError,
 ) -> Unit raise TemplateError {
   let n = items.length()
   if n < 2 {
@@ -157,8 +157,7 @@ fn filter_capitalize(
   let output = match s.get_char(0) {
     None => ""
     Some(first) =>
-      @unicode.char_to_upper(first) +
-      @unicode.to_lower(s.view(start_offset=first.utf16_len()))
+      @unicode.char_to_upper(first) + @unicode.to_lower(s[first.utf16_len():])
   }
   value.preserve_safety(output)
 }
@@ -226,7 +225,7 @@ fn cmp_helper(
   b : Value,
   case_sensitive : Bool,
   reverse : Bool,
-) -> Int {
+) -> Int32 {
   let ordering = if !case_sensitive {
     match (a.as_str(), b.as_str()) {
       (Some(a), Some(b)) =>
@@ -458,11 +457,11 @@ fn split_whitespace(s : String) -> Array[String] {
 
 ///|
 /// Port of `utils::splitn_whitespace`.
-fn splitn_whitespace(s : String, maxsplits : Int) -> Array[String] {
+fn splitn_whitespace(s : String, maxsplits : Int32) -> Array[String] {
   let rv = []
   let mut splits = 1
   let mut skip_ws = true
-  let mut split_start : Int? = None
+  let mut split_start : Int32? = None
   let mut last_split_end = 0
   let mut idx = 0
   for c in s {
@@ -472,7 +471,7 @@ fn splitn_whitespace(s : String, maxsplits : Int) -> Array[String] {
       continue
     } else if is_rust_whitespace(c) {
       if split_start is Some(old) {
-        rv.push(s.view(start_offset=old, end_offset=idx).to_owned())
+        rv.push(s[old:idx].to_owned())
         split_start = None
         last_split_end = idx
         splits += 1
@@ -488,14 +487,14 @@ fn splitn_whitespace(s : String, maxsplits : Int) -> Array[String] {
     idx += len
   }
   if last_split_end < s.length() {
-    rv.push(s.view(start_offset=last_split_end).to_owned())
+    rv.push(s[last_split_end:].to_owned())
   }
   rv
 }
 
 ///|
 /// Port of Rust's `str::splitn`.
-fn rust_splitn(s : String, n : Int, sep : String) -> Array[String] {
+fn rust_splitn(s : String, n : Int32, sep : String) -> Array[String] {
   let rv = []
   if n == 0 {
     return rv
@@ -526,13 +525,13 @@ fn rust_splitn(s : String, n : Int, sep : String) -> Array[String] {
   while rv.length() < n - 1 {
     match find_from(s, start, sep) {
       Some(rel) => {
-        rv.push(s.view(start_offset=start, end_offset=start + rel).to_owned())
+        rv.push(s[start:start + rel].to_owned())
         start = start + rel + sep.length()
       }
       None => break
     }
   }
-  rv.push(s.view(start_offset=start).to_owned())
+  rv.push(s[start:].to_owned())
   rv
 }
 
@@ -669,9 +668,9 @@ fn f64_to_i128_sat(v : Double) -> BigInt {
 /// Parses an integer like Rust's `str::parse::<i128>`.
 fn parse_i128(s : String) -> BigInt? {
   let (neg, digits) = if s.has_prefix("-") {
-    (true, s.view(start_offset=1))
+    (true, s[1:])
   } else if s.has_prefix("+") {
-    (false, s.view(start_offset=1))
+    (false, s[1:])
   } else {
     (false, s[:])
   }
@@ -737,7 +736,7 @@ fn is_rust_float_syntax(body : String) -> Bool {
 fn parse_f64_rust(s : String) -> Double raise TemplateError {
   let lower = s.to_lower()
   let body = if lower.has_prefix("-") || lower.has_prefix("+") {
-    lower.view(start_offset=1).to_owned()
+    lower[1:].to_owned()
   } else {
     lower
   }
@@ -856,7 +855,7 @@ fn filter_attr(state : State, args : Array[Value]) -> Value raise TemplateError 
 ///|
 fn round_with_negative_precision(
   value : Double,
-  precision : Int,
+  precision : Int32,
 ) -> Double raise TemplateError {
   if value.is_nan() || value.is_inf() {
     return value
@@ -1241,10 +1240,10 @@ fn filter_indent(
   fn strip_trailing_newline(input : String) -> String {
     let mut s = input
     if s.has_suffix("\n") {
-      s = s.view(end_offset=s.length() - 1).to_owned()
+      s = s[:s.length() - 1].to_owned()
     }
     if s.has_suffix("\r") {
-      s = s.view(end_offset=s.length() - 1).to_owned()
+      s = s[:s.length() - 1].to_owned()
     }
     s
   }
@@ -1635,7 +1634,7 @@ fn filter_zip(state : State, args : Array[Value]) -> Value raise TemplateError {
     all_values.push(o)
   }
   // Validate all values are iterable and calculate minimum length
-  let mut known_len : Int? = None
+  let mut known_len : Int32? = None
   for val in all_values {
     let _ = val.try_iter() catch {
       _ =>

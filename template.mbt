@@ -3,7 +3,7 @@
 priv struct CompiledTemplate {
   instructions : Instructions
   blocks : Map[String, Instructions]
-  buffer_size_hint : Int
+  buffer_size_hint : Int32
   syntax_config : SyntaxConfig
   initial_auto_escape : AutoEscape
 }
@@ -121,7 +121,7 @@ fn Template::eval(
 /// undeclared variables are tracked as dotted paths (`foo.bar`).
 pub fn Template::undeclared_variables(
   self : Template,
-  nested? : Bool = false,
+  nested~ : Bool = false,
 ) -> Array[String] {
   let ast = parse(
     self.compiled.instructions.source,
@@ -202,7 +202,7 @@ pub fn Expression::eval(
 /// Returns a set of all undeclared variables in the expression.
 pub fn Expression::undeclared_variables(
   self : Expression,
-  nested? : Bool = false,
+  nested~ : Bool = false,
 ) -> Array[String] {
   let expr = parse_expr(self.instructions.source) catch { _ => return [] }
   let rv = find_undeclared(EmitExpr({ expr, span: Span::default(), }), nested).to_array()

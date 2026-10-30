@@ -1,7 +1,7 @@
 ///|
 priv struct JsonParser {
   src : String
-  mut pos : Int
+  mut pos : Int32
   sort_keys : Bool
 }
 
@@ -250,12 +250,9 @@ fn JsonParser::parse_number(self : JsonParser) -> Value raise TemplateError {
       self.pos += 1
     }
   }
-  let text = self.src.view(start_offset=start, end_offset=self.pos).to_owned()
+  let text = self.src[start:self.pos].to_owned()
   if !is_float {
-    guard parse_uint_radix(
-        self.src.view(start_offset=digits_start, end_offset=int_end),
-        10,
-      )
+    guard parse_uint_radix(self.src[digits_start:int_end], 10)
       is Some(magnitude) else {
       raise self.error("invalid number")
     }
@@ -286,7 +283,7 @@ fn JsonParser::parse_number(self : JsonParser) -> Value raise TemplateError {
 /// (this matches the behavior of `serde_json` without `preserve_order`).
 pub fn Value::from_json_str(
   s : String,
-  sort_keys? : Bool = false,
+  sort_keys~ : Bool = false,
 ) -> Value raise TemplateError {
   let p = { src: s, pos: 0, sort_keys, }
   let rv = p.parse_value()
@@ -347,13 +344,13 @@ fn json_float(f : Double) -> String {
   let digits = StringBuilder()
   let mut point = 0
   // reconstruct digits and decimal point position from the plain notation
-  let body = if neg { s.view(start_offset=1).to_owned() } else { s }
+  let body = if neg { s[1:].to_owned() } else { s }
   let int_part = match body.find(".") {
-    Some(idx) => body.view(end_offset=idx).to_owned()
+    Some(idx) => body[:idx].to_owned()
     None => body
   }
   let frac_part = match body.find(".") {
-    Some(idx) => body.view(start_offset=idx + 1).to_owned()
+    Some(idx) => body[idx + 1:].to_owned()
     None => ""
   }
   let all = int_part + frac_part
@@ -365,7 +362,7 @@ fn json_float(f : Double) -> String {
   while trail > lead && all[trail - 1] == '0' {
     trail -= 1
   }
-  digits.write_view(all.view(start_offset=lead, end_offset=trail))
+  digits.write_view(all[lead:trail])
   point = int_part.length() - lead
   let d = digits.to_string()
   let len = d.length()
@@ -373,10 +370,7 @@ fn json_float(f : Double) -> String {
   if point >= len && point <= 16 {
     sign + d + "0".repeat(point - len) + ".0"
   } else if point > 0 && point <= 16 {
-    sign +
-    d.view(end_offset=point).to_owned() +
-    "." +
-    d.view(start_offset=point).to_owned()
+    sign + d[:point].to_owned() + "." + d[point:].to_owned()
   } else if point > -5 && point <= 0 {
     sign + "0." + "0".repeat(-point) + d
   } else {
@@ -384,7 +378,7 @@ fn json_float(f : Double) -> String {
     let mantissa = if len == 1 {
       d
     } else {
-      d.view(end_offset=1).to_owned() + "." + d.view(start_offset=1).to_owned()
+      d[:1].to_owned() + "." + d[1:].to_owned()
     }
     sign + mantissa + "e" + exp.to_string()
   }
@@ -423,9 +417,9 @@ fn write_json(
   sb : StringBuilder,
   value : Value,
   style : JsonStyle,
-  depth : Int,
+  depth : Int32,
 ) -> Unit raise TemplateError {
-  fn newline(sb : StringBuilder, style : JsonStyle, depth : Int) -> Unit {
+  fn newline(sb : StringBuilder, style : JsonStyle, depth : Int32) -> Unit {
     if style is Pretty(indent) {
       sb.write_char('\n')
       for _ in 0..<depth {
@@ -548,7 +542,7 @@ fn value_to_json_with_style(
 /// printed.
 pub fn Value::to_json_string(
   self : Value,
-  indent? : Int,
+  indent? : Int32,
 ) -> String raise TemplateError {
   match indent {
     Some(n) => value_to_json_with_style(self, Pretty(" ".repeat(n)))

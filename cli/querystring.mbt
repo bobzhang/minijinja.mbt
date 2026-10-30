@@ -10,11 +10,11 @@ priv enum QsNode {
 }
 
 ///|
-fn hex_value(c : Char) -> Int? {
+fn hex_value(c : Char) -> Int32? {
   match c {
-    '0'..='9' => Some(c.to_int() - '0'.to_int())
-    'a'..='f' => Some(c.to_int() - 'a'.to_int() + 10)
-    'A'..='F' => Some(c.to_int() - 'A'.to_int() + 10)
+    '0'..<='9' => Some(c.to_int() - '0'.to_int())
+    'a'..<='f' => Some(c.to_int() - 'a'.to_int() + 10)
+    'A'..<='F' => Some(c.to_int() - 'A'.to_int() + 10)
     _ => None
   }
 }
@@ -51,14 +51,12 @@ fn split_qs_key(key : StringView) -> Array[String] {
   match key.find("[") {
     None | Some(0) => [percent_decode(key)]
     Some(idx) => {
-      let segments = [percent_decode(key.view(end_offset=idx))]
-      let mut rest = key.view(start_offset=idx)
+      let segments = [percent_decode(key[:idx])]
+      let mut rest = key[idx:]
       while rest.has_prefix("[") {
         guard rest.find("]") is Some(close) else { break }
-        segments.push(
-          percent_decode(rest.view(start_offset=1, end_offset=close)),
-        )
-        rest = rest.view(start_offset=close + 1)
+        segments.push(percent_decode(rest[1:close]))
+        rest = rest[close + 1:]
       }
       segments
     }
@@ -106,11 +104,7 @@ fn parse_querystring(s : String) -> @minijinja.Value {
       continue
     }
     let (key, value) = match pair.find("=") {
-      Some(idx) =>
-        (
-          pair.view(end_offset=idx),
-          percent_decode(pair.view(start_offset=idx + 1)),
-        )
+      Some(idx) => (pair[:idx], percent_decode(pair[idx + 1:]))
       None => (pair, "")
     }
     qs_insert(root, split_qs_key(key), value)

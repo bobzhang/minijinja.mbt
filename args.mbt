@@ -131,7 +131,7 @@ pub fn Kwargs::get_int(
 pub fn Kwargs::get_usize(
   self : Kwargs,
   key : String,
-) -> Int? raise TemplateError {
+) -> Int32? raise TemplateError {
   self.get_converted(key, value_to_usize)
 }
 
@@ -205,7 +205,7 @@ fn value_to_i64(v : Value) -> Int64 raise TemplateError {
 /// Port of `usize::try_from(Value)` with Rust's 64 bit `usize`.  Values that
 /// do not fit an `Int` saturate; the callers reject counts this large before
 /// allocating (where upstream would abort on the allocation).
-fn value_to_usize(v : Value) -> Int raise TemplateError {
+fn value_to_usize(v : Value) -> Int32 raise TemplateError {
   match v.to_i128() {
     Some(i) if i >= 0N && i <= 0x7FFFFFFFN => i.to_int()
     Some(i) if i >= 0N && i <= max_u64_big => 0x7FFFFFFF
@@ -219,7 +219,7 @@ fn value_to_usize(v : Value) -> Int raise TemplateError {
 let max_alloc_count = 100_000_000
 
 ///|
-fn check_alloc_count(n : Int, what : String) -> Unit raise TemplateError {
+fn check_alloc_count(n : Int32, what : String) -> Unit raise TemplateError {
   if n > max_alloc_count {
     raise TemplateError::new(InvalidOperation, "\{what} is too large")
   }
@@ -227,7 +227,7 @@ fn check_alloc_count(n : Int, what : String) -> Unit raise TemplateError {
 
 ///|
 /// Port of `i32::try_from(Value)`.
-fn value_to_i32(v : Value) -> Int raise TemplateError {
+fn value_to_i32(v : Value) -> Int32 raise TemplateError {
   match v.to_i128() {
     Some(i) if i >= -0x80000000N && i <= 0x7FFFFFFFN => i.to_int()
     _ => raise unsupported_conversion(v.kind(), "i32")
@@ -339,8 +339,8 @@ pub fn StringInput::preserve_safety(
 pub struct Args {
   priv state : State
   priv values : Array[Value]
-  priv mut end : Int
-  priv mut idx : Int
+  priv mut end : Int32
+  priv mut idx : Int32
 }
 
 ///|
@@ -523,7 +523,7 @@ fn Args::opt_isize(self : Args) -> Int64? raise TemplateError {
 
 ///|
 /// A required 32 bit integer argument.
-pub fn Args::i32(self : Args) -> Int raise TemplateError {
+pub fn Args::i32(self : Args) -> Int32 raise TemplateError {
   match self.next_raw() {
     Some(v) => value_to_i32(v)
     None => raise TemplateError::from_kind(MissingArgument)
@@ -532,7 +532,7 @@ pub fn Args::i32(self : Args) -> Int raise TemplateError {
 
 ///|
 /// An optional 32 bit integer argument.
-pub fn Args::opt_i32(self : Args) -> Int? raise TemplateError {
+pub fn Args::opt_i32(self : Args) -> Int32? raise TemplateError {
   match self.next_raw() {
     Some(v) if v.is_undefined() || v.is_none() => None
     Some(v) => Some(value_to_i32(v))
@@ -542,7 +542,7 @@ pub fn Args::opt_i32(self : Args) -> Int? raise TemplateError {
 
 ///|
 /// A required non-negative integer argument.
-pub fn Args::usize(self : Args) -> Int raise TemplateError {
+pub fn Args::usize(self : Args) -> Int32 raise TemplateError {
   match self.next_raw() {
     Some(v) => value_to_usize(v)
     None => raise TemplateError::from_kind(MissingArgument)
@@ -551,7 +551,7 @@ pub fn Args::usize(self : Args) -> Int raise TemplateError {
 
 ///|
 /// An optional non-negative integer argument.
-pub fn Args::opt_usize(self : Args) -> Int? raise TemplateError {
+pub fn Args::opt_usize(self : Args) -> Int32? raise TemplateError {
   match self.next_raw() {
     Some(v) if v.is_undefined() || v.is_none() => None
     Some(v) => Some(value_to_usize(v))

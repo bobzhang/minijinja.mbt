@@ -68,7 +68,7 @@ fn Stack::peek(self : Stack) -> Value {
 }
 
 ///|
-fn Stack::reverse_top(self : Stack, n : Int) -> Unit {
+fn Stack::reverse_top(self : Stack, n : Int32) -> Unit {
   let len = self.values.length()
   let mut i = len - n
   let mut j = len - 1
@@ -83,7 +83,7 @@ fn Stack::reverse_top(self : Stack, n : Int) -> Unit {
 
 ///|
 /// Returns a copy of the top `n` (or popped count) values as call args.
-fn Stack::get_call_args(self : Stack, n : Int?) -> Array[Value] {
+fn Stack::get_call_args(self : Stack, n : Int32?) -> Array[Value] {
   let n = match n {
     Some(n) => n
     None => self.pop().as_usize().unwrap_or(0)
@@ -93,7 +93,7 @@ fn Stack::get_call_args(self : Stack, n : Int?) -> Array[Value] {
 }
 
 ///|
-fn Stack::drop_top(self : Stack, n : Int) -> Unit {
+fn Stack::drop_top(self : Stack, n : Int32) -> Unit {
   let len = self.values.length()
   self.values.truncate(len - n)
 }
@@ -102,8 +102,8 @@ fn Stack::drop_top(self : Stack, n : Int) -> Unit {
 priv struct Context {
   env : Environment
   stack : Array[Frame]
-  mut outer_stack_depth : Int
-  recursion_limit : Int
+  mut outer_stack_depth : Int32
+  recursion_limit : Int32
 }
 
 ///|
@@ -295,12 +295,12 @@ fn Context::next_loop_item(self : Context) -> Value? {
 }
 
 ///|
-fn Context::stack_depth(self : Context) -> Int {
+fn Context::stack_depth(self : Context) -> Int32 {
   self.stack.length()
 }
 
 ///|
-fn Context::restore_stack_depth(self : Context, depth : Int) -> Unit {
+fn Context::restore_stack_depth(self : Context, depth : Int32) -> Unit {
   if self.stack.length() > depth {
     self.stack.truncate(depth)
   }
@@ -308,13 +308,16 @@ fn Context::restore_stack_depth(self : Context, depth : Int) -> Unit {
 
 ///|
 /// The real depth of the context.
-fn Context::depth(self : Context) -> Int {
+fn Context::depth(self : Context) -> Int32 {
   self.outer_stack_depth + self.stack.length()
 }
 
 ///|
 /// Increase the stack depth.
-fn Context::incr_depth(self : Context, delta : Int) -> Unit raise TemplateError {
+fn Context::incr_depth(
+  self : Context,
+  delta : Int32,
+) -> Unit raise TemplateError {
   self.outer_stack_depth += delta
   errdefer {
     self.outer_stack_depth -= delta
@@ -324,7 +327,7 @@ fn Context::incr_depth(self : Context, delta : Int) -> Unit raise TemplateError 
 
 ///|
 /// Decrease the stack depth.
-fn Context::decr_depth(self : Context, delta : Int) -> Unit {
+fn Context::decr_depth(self : Context, delta : Int32) -> Unit {
   self.outer_stack_depth -= delta
 }
 

@@ -5,12 +5,12 @@
 /// values like in MiniJinja.  Offsets are UTF-16 code unit offsets into the
 /// template source.
 pub(all) struct Span {
-  start_line : Int
-  start_col : Int
-  start_offset : Int
-  end_line : Int
-  end_col : Int
-  end_offset : Int
+  start_line : Int32
+  start_col : Int32
+  start_offset : Int32
+  end_line : Int32
+  end_col : Int32
+  end_offset : Int32
 } derive(Eq)
 
 ///|

@@ -40,7 +40,7 @@ pub struct Environment {
   priv mut formatter_is_default : Bool
   priv mut debug : Bool
   priv mut fuel : Int64?
-  priv mut recursion_limit : Int
+  priv mut recursion_limit : Int32
   priv mut syntax_config : SyntaxConfig
   priv mut ws_config : WhitespaceConfig
   priv mut auto_escape_callback : (String) -> AutoEscape
@@ -398,7 +398,7 @@ pub fn Environment::syntax(self : Environment) -> SyntaxConfig {
 /// Reconfigures the runtime recursion limit (capped at 500).
 pub fn Environment::set_recursion_limit(
   self : Environment,
-  level : Int,
+  level : Int32,
 ) -> Unit {
   self.recursion_limit = if level < max_vm_recursion {
     level
@@ -409,7 +409,7 @@ pub fn Environment::set_recursion_limit(
 
 ///|
 /// Returns the current max recursion limit.
-pub fn Environment::recursion_limit(self : Environment) -> Int {
+pub fn Environment::recursion_limit(self : Environment) -> Int32 {
   self.recursion_limit
 }
 
@@ -641,12 +641,12 @@ pub fn default_auto_escape_callback(name : String) -> AutoEscape {
   let mut name = name
   for ext in [".j2", ".jinja2", ".jinja"] {
     if name.has_suffix(ext) {
-      name = name.view(end_offset=name.length() - ext.length()).to_owned()
+      name = name[:name.length() - ext.length()].to_owned()
       break
     }
   }
   let ext = match name.rev_find(".") {
-    Some(idx) => name.view(start_offset=idx + 1).to_owned()
+    Some(idx) => name[idx + 1:].to_owned()
     None => name
   }
   match ext {

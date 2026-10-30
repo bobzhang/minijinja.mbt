@@ -24,7 +24,7 @@ fn normalize_snapshot(s : String) -> String {
         ) {
     end -= 1
   }
-  s.view(start_offset=start, end_offset=end).to_owned()
+  s[start:end].to_owned()
 }
 
 ///|
@@ -55,11 +55,7 @@ fn snapshot_body(contents : String) -> String {
 /// Splits a fixture into its header (settings or context) and the template.
 fn split_fixture(contents : String) -> (String, String) {
   match contents.find("\n---\n") {
-    Some(idx) =>
-      (
-        contents.view(end_offset=idx).to_owned(),
-        contents.view(start_offset=idx + 5).to_owned(),
-      )
+    Some(idx) => (contents[:idx].to_owned(), contents[idx + 5:].to_owned())
     None => (contents, "")
   }
 }
