@@ -1,9 +1,11 @@
 ///|
+#cfg(any(target="native", target="wasm"))
 fn json_bool(obj : Map[String, Json], key : String) -> Bool {
   obj.get(key) is Some(True)
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 fn json_str(obj : Map[String, Json], key : String) -> String? {
   match obj.get(key) {
     Some(String(s)) => Some(s)
@@ -14,6 +16,7 @@ fn json_str(obj : Map[String, Json], key : String) -> String? {
 ///|
 /// Builds the syntax and whitespace config from the test settings used by
 /// the upstream test-suite.
+#cfg(any(target="native", target="wasm"))
 fn settings_to_configs(
   settings : Json,
 ) -> (SyntaxConfig, WhitespaceConfig) raise TemplateError {

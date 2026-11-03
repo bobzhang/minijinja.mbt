@@ -8,6 +8,7 @@ async fn read_text(path : String) -> String {
 ///|
 /// Normalizes snapshot contents like insta does: leading newlines and
 /// trailing whitespace are removed and CRLF is normalized to LF.
+#cfg(any(target="native", target="wasm"))
 fn normalize_snapshot(s : String) -> String {
   let s = s.replace_all(old="\r\n", new="\n")
   let mut start = 0
@@ -30,6 +31,7 @@ fn normalize_snapshot(s : String) -> String {
 ///|
 /// Extracts the body of an insta `.snap` file (everything after the YAML
 /// front matter).
+#cfg(any(target="native", target="wasm"))
 fn snapshot_body(contents : String) -> String {
   let lines = contents.split("\n").to_array()
   let mut dashes = 0
@@ -53,6 +55,7 @@ fn snapshot_body(contents : String) -> String {
 
 ///|
 /// Splits a fixture into its header (settings or context) and the template.
+#cfg(any(target="native", target="wasm"))
 fn split_fixture(contents : String) -> (String, String) {
   match contents.find("\n---\n") {
     Some(idx) => (contents[:idx].to_owned(), contents[idx + 5:].to_owned())
