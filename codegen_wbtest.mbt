@@ -1,4 +1,5 @@
 ///|
+#cfg(any(target="native", target="wasm"))
 fn finish_debug(c : CodeGenerator) -> String {
   let (instructions, blocks) = c.finish()
   let f = @rfmt.Formatter::new(alternate=true)
@@ -133,6 +134,7 @@ test "compiler: const folding" {
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 fn Instructions::fmt_debug(self : Instructions, f : @rfmt.Formatter) -> Unit {
   let l = f.debug_list()
   let mut last_line : Int32? = None

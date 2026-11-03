@@ -12,6 +12,10 @@ concurrency:
 
 jobs:
   fmt:
+    strategy:
+      fail-fast: false
+      matrix:
+        moonbit: [pre-release]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -34,6 +38,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         target: [native, wasm]
+        moonbit: [pre-release]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -56,6 +61,7 @@ jobs:
       fail-fast: false
       matrix:
         target: [wasm-gc, js]
+        moonbit: [pre-release]
     steps:
       - uses: actions/checkout@v5
       - name: Install MoonBit
@@ -64,6 +70,6 @@ jobs:
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
       - run: moon update
       - name: moon check
-        run: moon check --target ${{ matrix.target }}
+        run: moon check --target ${{ matrix.target }} --deny-warn
       - name: moon test
-        run: moon test --target ${{ matrix.target }}
+        run: moon test --target ${{ matrix.target }} --deny-warn

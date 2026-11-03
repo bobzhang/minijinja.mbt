@@ -9,9 +9,13 @@ import {
 
 warnings = "-implicit_impl_as_method"
 
+#cfg(any(target="native", target="wasm"))
 import {
   "moonbitlang/async",
   "moonbitlang/async/fs",
   "moonbitlang/core/json",
+} for "wbtest"
+
+import {
   "moonbitlang/core/bench",
 } for "wbtest"

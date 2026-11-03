@@ -1,4 +1,5 @@
 ///|
+#cfg(any(target="native", target="wasm"))
 fn render_error(prefix : String, err : TemplateError) -> String {
   let sb = StringBuilder()
   sb.write_string(prefix)
@@ -11,6 +12,7 @@ fn render_error(prefix : String, err : TemplateError) -> String {
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 fn render_error_chain(err : TemplateError) -> String {
   let sb = StringBuilder()
   sb.write_string(render_error("!!!ERROR!!!", err))
@@ -25,6 +27,7 @@ fn render_error_chain(err : TemplateError) -> String {
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 fn apply_template_settings(
   env : Environment,
   ctx : Value,
@@ -154,6 +157,7 @@ async test "block fragment snapshots" {
 }
 
 ///|
+#cfg(any(target="native", target="wasm"))
 fn render_fragment(
   template : Template,
   ctx : Value,
