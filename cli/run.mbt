@@ -10,6 +10,7 @@ let stdin_stdout : String = "-"
 
 ///|
 /// The result of running the command line tool.
+#derive(Debug, Eq)
 pub(all) struct Outcome {
   /// The process exit code.
   exit_code : Int32
@@ -17,7 +18,7 @@ pub(all) struct Outcome {
   stdout : String
   /// Everything written to stderr.
   stderr : String
-} derive(Debug, Eq)
+}
 
 ///|
 /// Per-invocation I/O state.

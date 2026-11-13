@@ -1,5 +1,6 @@
 ///|
 /// An enum describing the error kind.
+#derive(Eq, Hash, Debug)
 pub(all) enum ErrorKind {
   /// A non primitive value was encountered where one was expected.
   NonPrimitive
@@ -45,7 +46,7 @@ pub(all) enum ErrorKind {
   InvalidDelimiter
   /// A block is unknown
   UnknownBlock
-} derive(Eq, Hash, Debug)
+}
 
 ///|
 /// The name of the kind as Rust's `Debug` would print it.

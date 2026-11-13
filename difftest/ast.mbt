@@ -1,6 +1,7 @@
 ///|
 /// A generated template expression.  Rendering never adds parentheses on
 /// its own (`Paren` does), so precedence handling is exercised as well.
+#derive(Debug)
 enum Expr {
   /// A literal spelled exactly as in the template (`1`, `1.5e3`, `true`).
   Lit(String)
@@ -19,16 +20,18 @@ enum Expr {
   Slice(Expr, Expr?, Expr?, Expr?)
   Call(Expr, Array[Expr], Array[(String, Expr)])
   Cond(Expr, Expr, Expr?)
-} derive(Debug)
+}
 
 ///|
 /// Whitespace control markers of a tag: `-`, `+` or nothing.
+#derive(Debug)
 struct Ws {
   left : String
   right : String
-} derive(Debug)
+}
 
 ///|
+#derive(Debug)
 enum Stmt {
   Text(String)
   Emit(Ws, Expr)
@@ -52,11 +55,12 @@ enum Stmt {
   Block(Ws, String, Array[Stmt])
   Import(Ws, Expr, String)
   FromImport(Ws, Expr, Array[(String, String?)])
-} derive(Debug)
+}
 
 ///|
 /// A JSON value of the render context.  Floats are kept as their literal
 /// spelling so both engines parse exactly the same text.
+#derive(Debug)
 enum JVal {
   JNull
   JBool(Bool)
@@ -64,9 +68,10 @@ enum JVal {
   JStr(String)
   JArr(Array[JVal])
   JObj(Array[(String, JVal)])
-} derive(Debug)
+}
 
 ///|
+#derive(Debug)
 struct Case {
   name : String
   body : Array[Stmt]
@@ -79,7 +84,7 @@ struct Case {
   keep_trailing_newline : Bool
   /// Enables minijinja-contrib (filters, globals and pycompat methods).
   contrib : Bool
-} derive(Debug)
+}
 
 ///|
 fn quote_str(s : String) -> String {

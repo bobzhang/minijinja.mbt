@@ -4,6 +4,7 @@
 /// Lines start at 1 and columns at 0; both are counted in Unicode scalar
 /// values like in MiniJinja.  Offsets are UTF-16 code unit offsets into the
 /// template source.
+#derive(Eq)
 pub(all) struct Span {
   start_line : Int32
   start_col : Int32
@@ -11,7 +12,7 @@ pub(all) struct Span {
   end_line : Int32
   end_col : Int32
   end_offset : Int32
-} derive(Eq)
+}
 
 ///|
 /// Returns an empty span (all positions zero).

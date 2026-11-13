@@ -10,17 +10,23 @@ import {
 // Errors
 
 // Types and methods
-type Case derive(@debug.Debug)
+#derive(@debug.Debug)
+type Case
 
-type Expr derive(@debug.Debug)
+#derive(@debug.Debug)
+type Expr
 
-type JVal derive(@debug.Debug)
+#derive(@debug.Debug)
+type JVal
 
-type Outcome derive(Eq, @debug.Debug)
+#derive(Eq, @debug.Debug)
+type Outcome
 
-type Stmt derive(@debug.Debug)
+#derive(@debug.Debug)
+type Stmt
 
-type Ws derive(@debug.Debug)
+#derive(@debug.Debug)
+type Ws
 
 // Type aliases
 

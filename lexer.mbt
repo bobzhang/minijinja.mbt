@@ -8,21 +8,23 @@ priv enum LexerState {
 
 ///|
 /// Utility enum that defines a marker.
+#derive(Eq)
 priv enum StartMarker {
   Variable
   Block
   Comment
   LineStatement
   LineComment
-} derive(Eq)
+}
 
 ///|
 /// What ends this block tokenization?
+#derive(Eq)
 priv enum BlockSentinel {
   Variable
   Block
   LineStatement
-} derive(Eq)
+}
 
 ///|
 priv enum Whitespace {

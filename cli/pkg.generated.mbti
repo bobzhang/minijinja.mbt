@@ -13,11 +13,12 @@ pub let version : String
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct Outcome {
   exit_code : Int32
   stdout : String
   stderr : String
-} derive(Eq, @debug.Debug)
+}
 
 // Type aliases
 

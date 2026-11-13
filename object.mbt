@@ -3,6 +3,7 @@
 ///
 /// An [`ObjectRepr`] is a reduced form of [`ValueKind`] which only contains
 /// value types that can be represented by objects.
+#derive(Eq, Compare, Debug)
 pub(all) enum ObjectRepr {
   /// An object that has no reasonable representation.  Plain objects are
   /// not enumerable and do not support item access.
@@ -13,7 +14,7 @@ pub(all) enum ObjectRepr {
   Seq
   /// Represents a non indexable, iterable object.
   Iterable
-} derive(Eq, Compare, Debug)
+}
 
 ///|
 /// Enumerators help define iteration behavior for [`Object`]s.

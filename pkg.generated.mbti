@@ -4,6 +4,7 @@ package "bobzhang/minijinja"
 import {
   "moonbitlang/core/bigint",
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -77,12 +78,13 @@ pub fn Args::usize(Self) -> Int32 raise TemplateError
 pub fn Args::value(Self) -> Value raise TemplateError
 pub fn Args::value_or_kwargs(Self) -> Value raise TemplateError
 
+#derive(Eq)
 pub(all) enum AutoEscape {
   NoEscape
   Html
   Json
   Custom(String)
-} derive(Eq)
+}
 
 pub struct Captured {
   output : String
@@ -164,6 +166,7 @@ pub fn Environment::undefined_behavior(Self) -> UndefinedBehavior
 
 type ErrorData
 
+#derive(Eq, Hash, @debug.Debug)
 pub(all) enum ErrorKind {
   NonPrimitive
   NonKey
@@ -187,7 +190,7 @@ pub(all) enum ErrorKind {
   OutOfFuel
   InvalidDelimiter
   UnknownBlock
-} derive(Eq, Hash, @debug.Debug)
+}
 pub fn ErrorKind::description(Self) -> String
 pub fn ErrorKind::name(Self) -> String
 pub impl Show for ErrorKind
@@ -203,10 +206,11 @@ pub struct ExtensionKey[T] {
 }
 pub fn[T] ExtensionKey::new() -> Self[T]
 
+#derive(Eq)
 pub(all) enum FormatStyle {
   Printf
   StrFormat
-} derive(Eq)
+}
 
 pub struct Kwargs {
   // private fields
@@ -225,12 +229,13 @@ pub fn Kwargs::has(Self, String) -> Bool
 pub fn Kwargs::peek(Self, String) -> Value?
 pub fn Kwargs::to_value(Self) -> Value
 
+#derive(Compare, Eq, @debug.Debug)
 pub(all) enum ObjectRepr {
   Plain
   Map
   Seq
   Iterable
-} derive(Compare, Eq, @debug.Debug)
+}
 
 pub struct Output {
   // private fields
@@ -238,6 +243,7 @@ pub struct Output {
 pub fn Output::write_char(Self, Char) -> Unit raise TemplateError
 pub fn Output::write_str(Self, StringView) -> Unit raise TemplateError
 
+#derive(Eq)
 pub(all) struct Span {
   start_line : Int32
   start_col : Int32
@@ -245,7 +251,7 @@ pub(all) struct Span {
   end_line : Int32
   end_col : Int32
   end_offset : Int32
-} derive(Eq)
+}
 pub fn Span::default() -> Self
 pub fn Span::to_string(Self) -> String
 pub impl Default for Span
@@ -308,12 +314,13 @@ pub fn Template::render_to(Self, Value, (StringView) -> Unit raise) -> State rai
 pub fn Template::source(Self) -> String
 pub fn Template::undeclared_variables(Self, nested? : Bool) -> Array[String]
 
+#derive(Eq)
 pub(all) enum UndefinedBehavior {
   Lenient
   Chainable
   SemiStrict
   Strict
-} derive(Eq)
+}
 
 type Value
 pub fn Value::as_bigint(Self) -> @bigint.BigInt?
@@ -341,7 +348,7 @@ pub fn Value::from_error(TemplateError) -> Self
 pub fn Value::from_function(String, (State, Array[Self]) -> Self raise TemplateError) -> Self
 pub fn Value::from_int(Int32) -> Self
 pub fn Value::from_int64(Int64) -> Self
-pub fn Value::from_json(Json) -> Self
+pub fn Value::from_json(@json.Json) -> Self
 pub fn Value::from_json_str(String, sort_keys? : Bool) -> Self raise TemplateError
 pub fn Value::from_map(Map[Self, Self]) -> Self
 pub fn[T : Object] Value::from_object(T) -> Self
@@ -381,6 +388,7 @@ pub impl Hash for Value
 pub impl Show for Value
 pub impl @debug.Debug for Value
 
+#derive(Compare, Eq, @debug.Debug)
 pub(all) enum ValueKind {
   Undefined
   Null
@@ -393,7 +401,7 @@ pub(all) enum ValueKind {
   Iterable
   Plain
   Invalid
-} derive(Compare, Eq, @debug.Debug)
+}
 pub fn ValueKind::to_string(Self) -> String
 pub impl Show for ValueKind
 

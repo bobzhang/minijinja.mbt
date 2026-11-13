@@ -24,11 +24,12 @@ fn c_str(s : String) -> Bytes {
 }
 
 ///|
+#derive(Eq, Debug)
 enum Outcome {
   Rendered(String)
   Failed(String)
   Crashed(String)
-} derive(Eq, Debug)
+}
 
 ///|
 fn format_err(err : @minijinja.TemplateError) -> String {
