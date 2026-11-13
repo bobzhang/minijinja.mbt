@@ -233,7 +233,7 @@ fn string_methods(
       let found = if name == "find" { s.find(what) } else { s.rev_find(what) }
       @minijinja.Value::from_int(
         match found {
-          Some(offset) => s.char_length(end_offset=offset)
+          Some(offset) => s.char_length(end=offset)
           None => -1
         },
       )
