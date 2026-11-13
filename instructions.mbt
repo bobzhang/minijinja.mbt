@@ -15,10 +15,11 @@ const MACRO_CALLER : Int32 = 2
 const MAX_LOCALS : Int32 = 50
 
 ///|
+#derive(Eq)
 priv enum CaptureMode {
   Capture
   Discard
-} derive(Eq)
+}
 
 ///|
 /// A comparison operation.

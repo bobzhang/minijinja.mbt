@@ -1,17 +1,19 @@
 ///|
 /// The supported format string styles.
+#derive(Eq)
 pub(all) enum FormatStyle {
   /// Python's printf-style formatting (`"%s %d" % args`)
   Printf
   /// Python's `str.format` formatting (`"{} {:d}".format(args)`)
   StrFormat
-} derive(Eq)
+}
 
 ///|
+#derive(Eq)
 priv enum FormatConversion {
   Other
   Character
-} derive(Eq)
+}
 
 ///|
 priv enum PathElem {
@@ -40,6 +42,7 @@ priv struct FillAlign {
 }
 
 ///|
+#derive(Eq)
 priv enum FmtType {
   Default
   Binary
@@ -55,7 +58,7 @@ priv enum FmtType {
   UpperG
   Char
   String
-} derive(Eq)
+}
 
 ///|
 fn FmtType::description(self : FmtType) -> String {
@@ -78,10 +81,11 @@ fn FmtType::description(self : FmtType) -> String {
 }
 
 ///|
+#derive(Eq)
 priv enum Separator {
   Comma
   Underscore
-} derive(Eq)
+}
 
 ///|
 /// Captures format spec for both printf-style and str.format style format

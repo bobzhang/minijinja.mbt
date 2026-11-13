@@ -1,5 +1,6 @@
 ///|
 /// Describes the kind of value.
+#derive(Eq, Compare, Debug)
 pub(all) enum ValueKind {
   /// The value is undefined
   Undefined
@@ -23,7 +24,7 @@ pub(all) enum ValueKind {
   Plain
   /// This value is invalid (holds an error).
   Invalid
-} derive(Eq, Compare, Debug)
+}
 
 ///|
 pub fn ValueKind::to_string(self : ValueKind) -> String {

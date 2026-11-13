@@ -1,5 +1,6 @@
 ///|
 /// Controls the autoescaping behavior.
+#derive(Eq)
 pub(all) enum AutoEscape {
   /// Do not apply auto escaping.
   NoEscape
@@ -9,7 +10,7 @@ pub(all) enum AutoEscape {
   Json
   /// A custom auto escape format.  The default formatter fails for it.
   Custom(String)
-} derive(Eq)
+}
 
 ///|
 fn AutoEscape::debug_name(self : AutoEscape) -> String {
@@ -23,6 +24,7 @@ fn AutoEscape::debug_name(self : AutoEscape) -> String {
 
 ///|
 /// Defines the behavior of undefined values in the engine.
+#derive(Eq)
 pub(all) enum UndefinedBehavior {
   /// The default, somewhat lenient undefined behavior.
   ///
@@ -38,7 +40,7 @@ pub(all) enum UndefinedBehavior {
   SemiStrict
   /// Complains very quickly about undefined values.
   Strict
-} derive(Eq)
+}
 
 ///|
 fn UndefinedBehavior::handle_undefined(
