@@ -66,7 +66,7 @@ pub fn Template::render(
   self : Template,
   ctx : Value,
 ) -> String raise TemplateError {
-  let buf = StringBuilder(size_hint=self.compiled.buffer_size_hint)
+  let buf = StringBuilder(capacity=self.compiled.buffer_size_hint)
   self.eval(ctx, Output::new(buf)) |> ignore
   buf.to_string()
 }
@@ -78,7 +78,7 @@ pub fn Template::render_captured(
   self : Template,
   ctx : Value,
 ) -> Captured raise TemplateError {
-  let buf = StringBuilder(size_hint=self.compiled.buffer_size_hint)
+  let buf = StringBuilder(capacity=self.compiled.buffer_size_hint)
   let (_, state) = self.eval(ctx, Output::new(buf))
   { output: buf.to_string(), state, }
 }
