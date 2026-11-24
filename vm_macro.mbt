@@ -49,14 +49,14 @@ fn MacroObject::prepare_args(
         )
       (Some(arg), None) => arg_values.push(arg)
       (None, Some(kwarg)) => {
-        kwargs_used.add(name)
+        kwargs_used.insert(name)
         arg_values.push(kwarg)
       }
       (None, None) => arg_values.push(Value::undefined())
     }
   }
   let caller = if self.caller_reference {
-    kwargs_used.add("caller")
+    kwargs_used.insert("caller")
     Some(
       match kwargs {
         Some(kw) =>

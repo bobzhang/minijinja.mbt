@@ -39,7 +39,7 @@ fn func_range(state : State, args : Array[Value]) -> Value raise TemplateError {
   let len = len.to_int()
   Value::make_iterable(() => {
     let mut i = 0
-    Iter::new(
+    Iter::Iter(
       () => {
         if i < len {
           let rv = start + i.to_int64() * step

@@ -1160,7 +1160,7 @@ fn Parser::parse_block(
   if self.blocks.contains(name) {
     raise syntax_error("block '\{name}' defined twice")
   }
-  self.blocks.add(name)
+  self.blocks.insert(name)
   ignore(self.expect(t => t is BlockEnd, "end of block"))
   let body = self.subparse(is_ident("endblock"))
   ignore(self.stream.next())

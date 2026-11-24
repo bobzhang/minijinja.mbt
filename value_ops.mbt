@@ -528,7 +528,7 @@ fn repeat_iterable(n : Value, seq : DynObject) -> Value raise TemplateError {
   Value::make_iterable(() => {
     let mut round = 0
     let mut current : Iter[Value]? = None
-    Iter::new(
+    Iter::Iter(
       () => {
         for ;; {
           match current {
@@ -1040,7 +1040,7 @@ fn value_slice(
             Some(iter) => {
               let mut skipped = false
               let mut remaining = len
-              Iter::new(
+              Iter::Iter(
                 () => {
                   if !skipped {
                     skipped = true
@@ -1098,7 +1098,7 @@ fn value_slice(
                 vec.length(),
               )
               let it = indices.iter().filter_map(i => vec.get(i))
-              Iter::new(() => it.next(), size_hint=indices.length())
+              Iter::Iter(() => it.next(), size_hint=indices.length())
             }
             None => Iter::empty()
           }

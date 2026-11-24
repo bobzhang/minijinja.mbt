@@ -138,7 +138,7 @@ pub fn[T : FromValue] Kwargs::get_as(
   let rv = T::from_value(self.values.get(Value::from_string(key))) catch {
     err => raise with_missing_kwarg_detail(err, key)
   }
-  self.used.add(key)
+  self.used.insert(key)
   rv
 }
 

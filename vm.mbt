@@ -883,7 +883,7 @@ fn load_blocks(name : Value, state : State) -> Instructions raise TemplateError 
   }
   let tmpl = state.get_template(name)
   let compiled = tmpl.compiled
-  state.loaded_templates.add(compiled.instructions.name)
+  state.loaded_templates.insert(compiled.instructions.name)
   for block_name, instr in compiled.blocks {
     match state.blocks.get(block_name) {
       Some(stack) => stack.instructions.push(instr)

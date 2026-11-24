@@ -226,7 +226,7 @@ pub fn Value::make_iterable(maker : () -> Iter[Value]) -> Value {
 /// Creates an iterable that can only be iterated over once.
 pub fn Value::make_one_shot_iterator(iter : Iter[Value]) -> Value {
   let mut done = false
-  let shared = Iter::new(() => {
+  let shared = Iter::Iter(() => {
     if done {
       return None
     }
@@ -238,7 +238,7 @@ pub fn Value::make_one_shot_iterator(iter : Iter[Value]) -> Value {
       }
     }
   })
-  Value::make_iterable(() => Iter::new(() => shared.next()))
+  Value::make_iterable(() => Iter::Iter(() => shared.next()))
 }
 
 ///|
@@ -534,7 +534,7 @@ pub fn Value::try_iter(self : Value) -> Iter[Value] raise TemplateError {
         return Iter::empty()
       }
       let chars = s.iter()
-      Iter::new(() => chars.next().map(Value::from_char))
+      Iter::Iter(() => chars.next().map(Value::from_char))
     }
     Object(obj) =>
       match obj.try_iter() {
@@ -583,7 +583,7 @@ pub fn Value::reverse(self : Value) -> Value raise TemplateError {
         Seq(l) =>
           Value::make_iterable(() => {
             let mut idx = l
-            Iter::new(
+            Iter::Iter(
               () => {
                 if idx > 0 {
                   idx -= 1

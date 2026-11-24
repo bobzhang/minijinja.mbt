@@ -55,7 +55,7 @@ pub fn Kwargs::get(self : Kwargs, key : String) -> Value raise TemplateError {
       if v.is_kwargs() {
         raise unexpected_kwargs()
       }
-      self.used.add(key)
+      self.used.insert(key)
       v
     }
     None =>
@@ -74,7 +74,7 @@ pub fn Kwargs::get_opt(
   key : String,
 ) -> Value? raise TemplateError {
   let rv = self.peek_opt(key)
-  self.used.add(key)
+  self.used.insert(key)
   rv
 }
 
@@ -104,7 +104,7 @@ fn[T] Kwargs::get_converted(
     Some(v) => Some(convert(v))
     None => None
   }
-  self.used.add(key)
+  self.used.insert(key)
   rv
 }
 
