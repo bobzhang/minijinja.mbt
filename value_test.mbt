@@ -1212,7 +1212,7 @@ impl @minijinja.Object for VtMadMap with fn get_value(_self, key) {
 impl @minijinja.Object for VtMadMap with fn enumerate(_self) {
   let mut idx = 0
   Iter(
-    Iter::new(() => {
+    Iter::Iter(() => {
       idx += 1
       match idx {
         1 => Some(@minijinja.Value::from_string("a"))

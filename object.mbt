@@ -347,7 +347,7 @@ pub fn DynObject::try_iter(self : DynObject) -> Iter[Value]? {
     Seq(n) => {
       let mut idx = 0
       Some(
-        Iter::new(
+        Iter::Iter(
           () => {
             if idx < n {
               let rv = self
@@ -501,7 +501,7 @@ fn merge_seq_enumerate(m : MergeSeqObject) -> Enumerator {
   let values = m.values
   let mut idx = 0
   let mut current : Iter[Value]? = None
-  let iter = Iter::new(
+  let iter = Iter::Iter(
     () => {
       for ;; {
         match current {

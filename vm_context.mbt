@@ -208,14 +208,14 @@ fn Context::known_variables(self : Context, with_globals : Bool) -> Set[String] 
   for i = self.stack.length() - 1; i >= 0; i = i - 1 {
     let frame = self.stack[i]
     for key, _ in frame.locals {
-      seen.add(key)
+      seen.insert(key)
     }
     if frame.current_loop is Some(l) && l.with_loop_var {
-      seen.add("loop")
+      seen.insert("loop")
     }
     if frame.closure_context is Some(closure) {
       for key, _ in closure.values {
-        seen.add(key)
+        seen.insert(key)
       }
     }
     let iter = frame.ctx.try_iter() catch { _ => continue }
@@ -223,13 +223,13 @@ fn Context::known_variables(self : Context, with_globals : Bool) -> Set[String] 
       if key.as_str() is Some(str_key) && !seen.contains(str_key) {
         let ok = frame.ctx.get_item(key) catch { _ => continue }
         ignore(ok)
-        seen.add(str_key)
+        seen.insert(str_key)
       }
     }
   }
   if with_globals {
     for key, _ in self.env.globals {
-      seen.add(key)
+      seen.insert(key)
     }
   }
   seen

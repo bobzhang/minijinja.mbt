@@ -15,7 +15,7 @@ fn AssignmentTracker::is_assigned(
 
 ///|
 fn AssignmentTracker::assign(self : AssignmentTracker, name : String) -> Unit {
-  self.assigned[self.assigned.length() - 1].add(name)
+  self.assigned[self.assigned.length() - 1].insert(name)
 }
 
 ///|
@@ -24,7 +24,7 @@ fn AssignmentTracker::assign_nested(
   name : String,
 ) -> Unit {
   if self.nested_out is Some(nested_out) {
-    nested_out.add(name)
+    nested_out.insert(name)
   }
 }
 
@@ -109,7 +109,7 @@ fn tracker_visit_expr(expr : Expr, state : AssignmentTracker) -> Unit {
   match expr {
     Var(v) =>
       if !state.is_assigned(v.id) {
-        state.out.add(v.id)
+        state.out.insert(v.id)
         // if we are not tracking nested assignments, we can consider a
         // variable to be assigned the first time we perform a lookup.
         if state.nested_out is None {

@@ -1597,7 +1597,7 @@ fn filter_chain(
     Value::make_iterable(() => {
       let mut idx = 0
       let mut current : Iter[Value]? = None
-      Iter::new(() => {
+      Iter::Iter(() => {
         for ;; {
           match current {
             Some(it) =>
@@ -1666,10 +1666,10 @@ fn filter_zip(state : State, args : Array[Value]) -> Value raise TemplateError {
     let iters = []
     for val in all_values {
       // like upstream's `from_fn` fallback: empty, but of unknown length
-      let it = val.try_iter() catch { _ => return Iter::new(() => None) }
+      let it = val.try_iter() catch { _ => return Iter::Iter(() => None) }
       iters.push(it)
     }
-    Iter::new(
+    Iter::Iter(
       () => {
         if iters.is_empty() {
           return None
