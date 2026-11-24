@@ -1,6 +1,6 @@
 import {
-  "bobzhang/minijinja/cli",
   "moonbitlang/async",
+  "bobzhang/minijinja/cli",
   "moonbitlang/async/stdio",
   "moonbitlang/core/env",
 }

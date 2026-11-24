@@ -15,13 +15,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        moonbit: [pre-release]
+        moonbit: [latest, pre-release]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - name: Install MoonBit
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s -- pre-release
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s -- "${{ matrix.moonbit }}"
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
       - run: moon version --all
       - run: moon update
@@ -38,13 +38,13 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         target: [native, wasm]
-        moonbit: [pre-release]
+        moonbit: [latest, pre-release]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
       - name: Install MoonBit
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s -- pre-release
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s -- "${{ matrix.moonbit }}"
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
       - run: moon version --all
       - run: moon update
@@ -61,12 +61,12 @@ jobs:
       fail-fast: false
       matrix:
         target: [wasm-gc, js]
-        moonbit: [pre-release]
+        moonbit: [latest, pre-release]
     steps:
       - uses: actions/checkout@v5
       - name: Install MoonBit
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s -- pre-release
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s -- "${{ matrix.moonbit }}"
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
       - run: moon update
       - name: moon check
