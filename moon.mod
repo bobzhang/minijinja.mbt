@@ -15,5 +15,5 @@ description = "A port of MiniJinja (a Jinja2 template engine) to MoonBit"
 preferred_target = "native"
 
 import {
-  "moonbitlang/async@0.22.4",
+  "moonbitlang/async@0.22.10",
 }
